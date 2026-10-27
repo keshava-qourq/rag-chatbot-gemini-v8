@@ -1,0 +1,561 @@
+// @ts-nocheck -- generated from the approved design under its JS runtime contract; not hand-written TypeScript.
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React from "react";
+
+import * as UI from "@/lib/ui";
+import { Icons } from "@/lib/icons";
+import { brand } from "@/lib/brand";
+import { useNavigate } from "@/lib/navigate";
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const { Button, Input, Label, Select, Table, THead, TBody, TR, TH, TD, Empty } = UI;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const { Upload } = Icons;
+
+export default function Screen() {
+  const navigate = useNavigate();
+  const MAX_DOCS = 5;
+  const MAX_SIZE_BYTES = 20 * 1024 * 1024;
+
+  const INITIAL_DOCUMENTS = [
+    {
+      id: 'doc-policy',
+      filename: 'policy.pdf',
+      status: 'ready',
+      page_count: 12,
+      size_bytes: 2_430_000,
+      error_message: null,
+      created_at: '2026-10-24T09:12:00Z'
+    },
+    {
+      id: 'doc-handbook',
+      filename: 'handbook.pdf',
+      status: 'ready',
+      page_count: 34,
+      size_bytes: 8_120_000,
+      error_message: null,
+      created_at: '2026-10-25T14:45:00Z'
+    },
+    {
+      id: 'doc-marketscan',
+      filename: 'market-scan-2024.pdf',
+      status: 'failed',
+      page_count: null,
+      size_bytes: 5_310_000,
+      error_message: "No extractable text found — this looks like a scanned, image-only PDF. OCR isn't supported yet; please re-upload a text-based PDF.",
+      created_at: '2026-10-26T11:03:00Z'
+    }
+  ];
+
+  const INITIAL_EXCHANGES = [
+    {
+      id: 'ex-1',
+      question: 'Refund policy?',
+      answer: 'Refunds are accepted within 30 days of purchase, provided the item is unmodified and the original receipt is attached.',
+      citations: [{ filename: 'policy.pdf', page: 4 }],
+      created_at: '2026-10-25T16:02:00Z'
+    },
+    {
+      id: 'ex-2',
+      question: 'Warranty coverage?',
+      answer: 'Could not be found in the attached documents.',
+      citations: [],
+      created_at: '2026-10-26T10:18:00Z'
+    },
+    {
+      id: 'ex-3',
+      question: 'Summarize section 2.',
+      answer: "Section 2 covers the company's data retention schedule and the consent requirements collected at sign-up.",
+      citations: [{ filename: 'handbook.pdf', page: 12 }],
+      created_at: '2026-10-26T18:41:00Z'
+    }
+  ];
+
+  function formatBytes(bytes) {
+    if (bytes == null) return '—';
+    const mb = bytes / (1024 * 1024);
+    return mb >= 1 ? `${mb.toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  }
+
+  function formatTime(iso) {
+    try {
+      return new Date(iso).toLocaleString(undefined, {
+        month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+      });
+    } catch (e) {
+      return '';
+    }
+  }
+
+  const glassStyle = {
+    borderRadius: brand.radius,
+    background: 'rgba(255,255,255,0.07)',
+    border: '1px solid rgba(255,255,255,0.14)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)'
+  };
+
+  const [documents, setDocuments] = React.useState(INITIAL_DOCUMENTS);
+  const [exchanges, setExchanges] = React.useState(INITIAL_EXCHANGES);
+  const [question, setQuestion] = React.useState('');
+  const [asking, setAsking] = React.useState(false);
+  const [askWarning, setAskWarning] = React.useState(null);
+  const [uploadMessage, setUploadMessage] = React.useState(null);
+  const [uploadIsError, setUploadIsError] = React.useState(false);
+  const idCounter = React.useRef(0);
+  const fileInputRef = React.useRef(null);
+  const processingTimers = React.useRef({});
+  const askTimer = React.useRef(null);
+
+  function nextId(prefix) {
+    idCounter.current += 1;
+    return `${prefix}-${Date.now()}-${idCounter.current}`;
+  }
+
+  React.useEffect(() => {
+    return () => {
+      Object.values(processingTimers.current).forEach(clearTimeout);
+      if (askTimer.current) clearTimeout(askTimer.current);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    documents.forEach((doc) => {
+      if (doc.status === 'processing' && !processingTimers.current[doc.id]) {
+        processingTimers.current[doc.id] = setTimeout(() => {
+          setDocuments((prev) =>
+            prev.map((d) => {
+              if (d.id !== doc.id) return d;
+              const looksScanned = /scan|image/i.test(d.filename);
+              if (looksScanned) {
+                return {
+                  ...d,
+                  status: 'failed',
+                  error_message:
+                    "No extractable text found — this looks like a scanned, image-only PDF. OCR isn't supported yet; please re-upload a text-based PDF."
+                };
+              }
+              const estimatedPages = Math.max(1, Math.round(d.size_bytes / 160000));
+              return { ...d, status: 'ready', page_count: estimatedPages, error_message: null };
+            })
+          );
+          delete processingTimers.current[doc.id];
+        }, 2200);
+      }
+    });
+  }, [documents]);
+
+  const readyDocs = documents.filter((d) => d.status === 'ready');
+
+  function handleFileChange(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    setUploadIsError(false);
+
+    const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+    if (!isPdf) {
+      setUploadIsError(true);
+      setUploadMessage(`"${file.name}" isn't a PDF. Only PDF files are supported for this session.`);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+    if (file.size > MAX_SIZE_BYTES) {
+      setUploadIsError(true);
+      setUploadMessage(`"${file.name}" is ${formatBytes(file.size)}, which is over the 20MB per-file limit.`);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+    if (documents.length >= MAX_DOCS) {
+      setUploadIsError(true);
+      setUploadMessage(`This session already has ${MAX_DOCS} of ${MAX_DOCS} documents attached, the maximum allowed. Open a new session to add more.`);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    const newDoc = {
+      id: nextId('doc'),
+      filename: file.name,
+      status: 'processing',
+      page_count: null,
+      size_bytes: file.size,
+      error_message: null,
+      created_at: new Date().toISOString()
+    };
+    setDocuments((prev) => [...prev, newDoc]);
+    setUploadIsError(false);
+    setUploadMessage(`"${file.name}" was uploaded and is being processed.`);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  function generateAnswer(text) {
+    const lower = text.toLowerCase();
+    if (lower.includes('refund')) {
+      return {
+        answer: 'Refunds are accepted within 30 days of purchase, provided the item is unmodified and the original receipt is attached.',
+        citations: [{ filename: 'policy.pdf', page: 4 }]
+      };
+    }
+    if (lower.includes('warranty')) {
+      return { answer: 'Could not be found in the attached documents.', citations: [] };
+    }
+    if (lower.includes('section 2') || lower.includes('summarize') || lower.includes('summarise')) {
+      return {
+        answer: "Section 2 covers the company's data retention schedule and the consent requirements collected at sign-up.",
+        citations: [{ filename: 'handbook.pdf', page: 12 }]
+      };
+    }
+    if (lower.includes('pricing') || lower.includes('price') || lower.includes('cost')) {
+      return {
+        answer: 'Pricing tiers are listed in the appendix, though that section did not retain page numbers during extraction.',
+        citations: [{ filename: 'handbook.pdf', page: null }]
+      };
+    }
+    if (lower.includes('market') || lower.includes('competitor')) {
+      return { answer: 'Could not be found in the attached documents.', citations: [] };
+    }
+    return {
+      answer: "That doesn't appear to be covered in the documents attached to this session.",
+      citations: []
+    };
+  }
+
+  function handleAsk(e) {
+    e.preventDefault();
+    const trimmed = question.trim();
+    if (!trimmed) return;
+
+    if (readyDocs.length === 0) {
+      setAskWarning(
+        'No ready documents yet. Upload a PDF above and wait for it to finish processing before asking a question.'
+      );
+      return;
+    }
+    setAskWarning(null);
+
+    const pendingId = nextId('ex');
+    const createdAt = new Date().toISOString();
+    setExchanges((prev) => [
+      ...prev,
+      { id: pendingId, question: trimmed, answer: null, citations: [], created_at: createdAt, pending: true }
+    ]);
+    setQuestion('');
+    setAsking(true);
+
+    askTimer.current = setTimeout(() => {
+      const result = generateAnswer(trimmed);
+      setExchanges((prev) =>
+        prev.map((ex) =>
+          ex.id === pendingId
+            ? { ...ex, answer: result.answer, citations: result.citations, pending: false }
+            : ex
+        )
+      );
+      setAsking(false);
+    }, 1300);
+  }
+
+  function StatusBadge({ status }) {
+    const map = {
+      ready: { label: 'Ready', Icon: Icons.CheckCircle, color: '#34d399' },
+      processing: { label: 'Processing', Icon: Icons.Clock, color: '#fbbf24' },
+      failed: { label: 'Failed', Icon: Icons.AlertCircle, color: '#fb7185' }
+    };
+    const cfg = map[status] || map.processing;
+    const Icon = cfg.Icon;
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
+        style={{ color: cfg.color, background: `${cfg.color}1f`, border: `1px solid ${cfg.color}40` }}
+      >
+        <Icon size={13} aria-hidden="true" />
+        {cfg.label}
+      </span>
+    );
+  }
+
+  return (
+    <div
+      className="min-h-full w-full px-4 py-6 md:px-8 md:py-8"
+      style={{ fontFamily: brand.fontBody, color: '#e7edf6' }}
+    >
+      <div className="mx-auto flex max-w-6xl flex-col gap-6">
+        {/* Row 1 */}
+        <div className="flex items-start gap-4">
+          <button
+            type="button"
+            data-wf="b-0-0"
+            aria-label="Back to sessions"
+            onClick={() => navigate('sessions')}
+            className="mt-1 flex h-11 w-11 flex-none items-center justify-center rounded-full transition-colors duration-150 hover:bg-white/10 focus:outline-none focus-visible:ring-2"
+            style={{ border: '1px solid rgba(255,255,255,0.16)', ['--tw-ring-color']: brand.primaryColor }}
+          >
+            <Icons.ArrowLeft size={18} aria-hidden="true" />
+          </button>
+          <h1
+            data-wf="b-0-1"
+            className="text-3xl font-bold leading-tight md:text-4xl"
+            style={{ fontFamily: brand.fontHeading }}
+          >
+            Session: Research Papers
+          </h1>
+        </div>
+
+        {/* Row 2 */}
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-12">
+          {/* Documents table */}
+          <section
+            data-wf="b-1-0"
+            className="md:col-span-5 p-5"
+            style={glassStyle}
+            aria-labelledby="documents-heading"
+          >
+            <h2 id="documents-heading" className="mb-3 text-lg font-semibold" style={{ fontFamily: brand.fontHeading }}>
+              Documents
+            </h2>
+            <div className="overflow-x-auto">
+              <Table>
+                <THead>
+                  <TR>
+                    <TH data-wf="i-1-0-0" scope="col">Filename</TH>
+                    <TH data-wf="i-1-0-1" scope="col">Status</TH>
+                    <TH data-wf="i-1-0-2" scope="col" className="text-right">Pages</TH>
+                  </TR>
+                </THead>
+                <TBody>
+                  {documents.map((doc) => (
+                    <TR key={doc.id}>
+                      <TD>
+                        <div className="flex flex-col">
+                          <span className="font-medium" style={{ color: '#f3f6fb' }}>{doc.filename}</span>
+                          <span className="text-xs" style={{ color: brand.neutralColor }}>
+                            {formatBytes(doc.size_bytes)}
+                          </span>
+                          {doc.status === 'failed' && doc.error_message && (
+                            <span className="mt-1 max-w-[220px] text-xs" style={{ color: '#fb7185' }}>
+                              {doc.error_message}
+                            </span>
+                          )}
+                        </div>
+                      </TD>
+                      <TD><StatusBadge status={doc.status} /></TD>
+                      <TD className="text-right tabular-nums">{doc.page_count ?? '—'}</TD>
+                    </TR>
+                  ))}
+                </TBody>
+              </Table>
+            </div>
+          </section>
+
+          {/* Upload form */}
+          <section
+            data-wf="b-1-1"
+            className="md:col-span-4 p-5"
+            style={glassStyle}
+            aria-labelledby="upload-heading"
+          >
+            <h2 id="upload-heading" className="mb-3 text-lg font-semibold" style={{ fontFamily: brand.fontHeading }}>
+              Upload PDF
+            </h2>
+            <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-3">
+              <div>
+                <Label htmlFor="pdf-file-input" className="mb-1.5 block text-sm" style={{ color: brand.neutralColor }}>
+                  Select PDF file (max 20MB)
+                </Label>
+                <input
+                  id="pdf-file-input"
+                  data-wf="i-1-1-0"
+                  ref={fileInputRef}
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  onChange={handleFileChange}
+                  disabled={documents.length >= MAX_DOCS}
+                  className="block w-full text-sm file:mr-3 file:rounded-full file:border-0 file:px-4 file:py-2 file:text-sm file:font-medium focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{
+                    color: brand.neutralColor,
+                    ['--tw-ring-color']: brand.accentColor
+                  }}
+                />
+              </div>
+              {documents.length >= MAX_DOCS && (
+                <p className="text-xs" style={{ color: '#fbbf24' }}>
+                  Document limit reached for this session. Open a new session to upload more.
+                </p>
+              )}
+              {uploadMessage && (
+                <p
+                  role="status"
+                  aria-live="polite"
+                  className="flex items-start gap-1.5 text-xs"
+                  style={{ color: uploadIsError ? '#fb7185' : '#34d399' }}
+                >
+                  {uploadIsError ? (
+                    <Icons.AlertCircle size={14} className="mt-0.5 flex-none" aria-hidden="true" />
+                  ) : (
+                    <Icons.CheckCircle size={14} className="mt-0.5 flex-none" aria-hidden="true" />
+                  )}
+                  {uploadMessage}
+                </p>
+              )}
+            </form>
+          </section>
+
+          {/* Helper text */}
+          <aside data-wf="b-1-2" className="md:col-span-3 flex items-center p-5" style={glassStyle}>
+            <p className="text-sm leading-relaxed" style={{ color: brand.neutralColor }}>
+              <span className="font-semibold tabular-nums" style={{ color: '#f3f6fb' }}>
+                {documents.length} of {MAX_DOCS}
+              </span>{' '}
+              documents attached. PDF only, 20MB limit per file.
+            </p>
+          </aside>
+        </div>
+
+        {/* Row 3 */}
+        <section
+          data-wf="b-2-0"
+          className="p-5 md:p-6"
+          style={glassStyle}
+          aria-labelledby="history-heading"
+        >
+          <h2 id="history-heading" className="mb-4 text-lg font-semibold" style={{ fontFamily: brand.fontHeading }}>
+            Conversation History
+          </h2>
+          {exchanges.length === 0 ? (
+            <Empty
+              title="No questions asked yet"
+              description="Once a document finishes processing, ask something about it below and the answer, with citations, will show up here."
+            />
+          ) : (
+            <ul className="flex flex-col gap-4">
+              {exchanges.map((ex, idx) => {
+                const wfId = idx < 3 ? ['i-2-0-0', 'i-2-0-1', 'i-2-0-2'][idx] : undefined;
+                return (
+                  <li
+                    key={ex.id}
+                    data-wf={wfId}
+                    className="rounded-2xl p-4 transition-opacity duration-300"
+                    style={{
+                      borderRadius: brand.radius,
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.10)'
+                    }}
+                  >
+                    <p className="text-sm font-semibold" style={{ color: '#f3f6fb' }}>
+                      <span style={{ color: brand.primaryColor }}>Q:</span> {ex.question}
+                    </p>
+                    {ex.pending ? (
+                      <p
+                        className="mt-2 flex items-center gap-2 text-sm animate-pulse motion-reduce:animate-none"
+                        style={{ color: brand.neutralColor }}
+                      >
+                        <Icons.Clock size={14} aria-hidden="true" />
+                        Searching ready documents…
+                      </p>
+                    ) : (
+                      <>
+                        <p className="mt-2 text-sm leading-relaxed" style={{ color: '#dfe7f2' }}>
+                          <span style={{ color: brand.accentColor }}>A:</span> {ex.answer}
+                        </p>
+                        {ex.citations.length > 0 && (
+                          <div className="mt-2.5 flex flex-wrap gap-2">
+                            {ex.citations.map((c, i) => (
+                              <span
+                                key={i}
+                                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs"
+                                style={{
+                                  color: brand.primaryColor,
+                                  background: `${brand.primaryColor}14`,
+                                  border: `1px solid ${brand.primaryColor}3a`
+                                }}
+                              >
+                                <Icons.FileText size={12} aria-hidden="true" />
+                                {c.filename}
+                                {c.page != null ? `, p.${c.page}` : ''}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                    <p className="mt-2 text-xs" style={{ color: brand.neutralColor }}>
+                      {formatTime(ex.created_at)}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+
+        {/* Row 4 */}
+        <div>
+          {askWarning && (
+            <p
+              role="alert"
+              className="mb-2 flex items-center gap-2 text-sm"
+              style={{ color: '#fbbf24' }}
+            >
+              <Icons.AlertCircle size={15} aria-hidden="true" />
+              {askWarning}
+            </p>
+          )}
+          <form
+            data-wf="b-3-0"
+            onSubmit={handleAsk}
+            className="grid grid-cols-1 gap-3 p-3 md:grid-cols-12 md:items-end"
+            style={{
+              ...glassStyle,
+              boxShadow: `0 0 70px -20px ${brand.accentColor}70`
+            }}
+          >
+            <div className="md:col-span-10">
+              <Label htmlFor="question-input" className="sr-only">
+                Ask a question about your documents
+              </Label>
+              <Input
+                id="question-input"
+                data-wf="i-3-0-0"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                placeholder="Ask a question about your documents..."
+                autoComplete="off"
+                className="w-full focus:outline-none focus-visible:ring-2"
+                style={{
+                  borderRadius: brand.radius,
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.18)',
+                  color: '#f3f6fb',
+                  ['--tw-ring-color']: brand.primaryColor
+                }}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <Button
+                type="submit"
+                data-wf="b-3-1"
+                disabled={asking || question.trim().length === 0}
+                className="flex w-full items-center justify-center gap-2 font-semibold transition-transform duration-150 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-60"
+                style={{
+                  borderRadius: brand.radius,
+                  background: `linear-gradient(135deg, ${brand.primaryColor}, ${brand.accentColor})`,
+                  color: '#061018',
+                  padding: '0.7rem 1rem',
+                  ['--tw-ring-color']: brand.accentColor
+                }}
+              >
+                {asking ? (
+                  <>Thinking…</>
+                ) : (
+                  <>
+                    Send
+                    <Icons.ArrowRight size={15} aria-hidden="true" />
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
