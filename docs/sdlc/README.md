@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 Build a rag chatbot where user can upload there own documents and ask queries about them use gemini-2.5-flash for answers and gemini-embedding-001 for embeddings and have chat history and sessions
 
-**Documentation version:** v2
+**Documentation version:** v3
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -15,14 +15,14 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 |---|---|
 | [Requirements](requirements/README.md) | v1 approved |
 | [Architecture](architecture/README.md) | 18 entries |
-| [Development](development/README.md) | 1 entry |
+| [Development](development/README.md) | 5 entries |
 | [Testing](testing/README.md) | 1 entry |
 | [Deployment](deployment/README.md) | 1 entry |
 | [Maintenance](maintenance/README.md) | 1 entry |
 | [Data model](architecture/data-model.md) | generated |
 | [API (OpenAPI)](architecture/api/openapi.yaml) | generated |
 | [Decisions (ADRs)](architecture/adr/README.md) | 4 decisions |
-| [Sprint plan](development/sprint-plan.md) | not generated yet |
+| [Sprint plan](development/sprint-plan.md) | 4 sprints |
 | [Developer guide](development/developer-guide.md) | generated |
 | [API reference](development/api-reference.md) | 1 route |
 | [Test report](testing/test-report.md) | not run yet |
@@ -31,7 +31,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 | [Runbook](deployment/runbook.md) | not deployed yet |
 | [Release notes](deployment/release-notes.md) | 0 releases |
 | [Traceability matrix](traceability-matrix.md) | 11 requirements |
-| [Changelog](CHANGELOG.md) | 2 versions |
+| [Changelog](CHANGELOG.md) | 3 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -51,7 +51,13 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 
 ### Development
 
-- Development phase has not started -- no planning or implementation records available to document.
+- No record of who approved the plan or when.
+- No execution/progress status (in-progress, done, blocked) given for any sprint or item — only the backlog plan itself was provided.
+- No evidence provided that these items were actually implemented or completed — only planned.
+- No evidence provided that these items or sub-tasks were actually implemented or completed — only planned.
+- No detail on validation rules (allowed file types, size/count limits) beyond the task title.
+- No specifics given on chunking strategy parameters (chunk size, overlap) or failure-handling behavior beyond task titles.
+- No detail on how citations are rendered or on chat history retention limits/format beyond the story titles.
 
 ### Testing
 

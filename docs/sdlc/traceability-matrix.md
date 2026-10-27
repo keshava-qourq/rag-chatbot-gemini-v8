@@ -9,15 +9,15 @@ Built from recorded links, not written by a model: requirement key → plan item
 <!-- sdlc:auto:start matrix -->
 | Requirement | Epic | Title | Plan items | Sprint | Design | Code | Commits | Ticket | Tests | AC tests | Deployed |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| US-001 | EPIC-001 | Sign up with email and password | — | — | — | — | — | not started | not run | 0/3 tested · 0/3 passing | — |
-| US-002 | EPIC-001 | Log in with email and password | — | — | — | — | — | not started | not run | 0/3 tested · 0/3 passing | — |
-| US-003 | EPIC-001 | Log out of the application | — | — | — | — | — | not started | not run | 0/1 tested · 0/1 passing | — |
-| US-004 | EPIC-001 | Private, isolated workspace per user | — | — | — | — | — | not started | not run | 0/2 tested · 0/2 passing | — |
-| US-005 | EPIC-002 | Create a new chat session | — | — | — | — | — | not started | not run | 0/1 tested · 0/1 passing | — |
-| US-006 | EPIC-002 | View and switch between my sessions | — | — | — | — | — | not started | not run | 0/2 tested · 0/2 passing | — |
-| US-007 | EPIC-003 | Upload a PDF to a chat session | — | — | — | — | — | not started | not run | 0/4 tested · 0/4 passing | — |
-| US-008 | EPIC-003 | Parse, chunk, and embed uploaded PDFs | — | — | — | — | — | not started | not run | 0/5 tested · 0/5 passing | — |
-| US-009 | EPIC-004 | Ask a question scoped to the active session's documents | — | — | — | — | — | not started | not run | 0/5 tested · 0/5 passing | — |
-| US-010 | EPIC-004 | View source citations for each answer | — | — | — | — | — | not started | not run | 0/2 tested · 0/2 passing | — |
-| US-011 | EPIC-005 | Retain and view full session chat history | — | — | — | — | — | not started | not run | 0/2 tested · 0/2 passing | — |
+| US-001 | EPIC-001 | Sign up with email and password | US-001 | 1 | POST /auth/signup, api_backend, postgres, users | — | — | not started | not run | 0/3 tested · 0/3 passing | — |
+| US-002 | EPIC-001 | Log in with email and password | US-002 | 1 | POST /auth/login, api_backend, postgres, users | — | — | not started | not run | 0/3 tested · 0/3 passing | — |
+| US-003 | EPIC-001 | Log out of the application | US-003 | 1 | POST /auth/logout, api_backend, users | — | — | not started | not run | 0/1 tested · 0/1 passing | — |
+| US-004 | EPIC-001 | Private, isolated workspace per user | US-004 | 1 | api_backend, documents, messages, postgres, sessions, users | — | — | not started | not run | 0/2 tested · 0/2 passing | — |
+| US-005 | EPIC-002 | Create a new chat session | US-005 | 1 | POST /sessions, api_backend, postgres, sessions | — | — | not started | not run | 0/1 tested · 0/1 passing | — |
+| US-006 | EPIC-002 | View and switch between my sessions | US-006 | 2 | GET /sessions, GET /sessions/{session_id}, api_backend, sessions, web_app | — | — | not started | not run | 0/2 tested · 0/2 passing | — |
+| US-007 | EPIC-003 | Upload a PDF to a chat session | US-007, US-007-T1, US-007-T2, US-007-T3, US-007-T4 | 2 | GET /sessions/{session_id}/documents, POST /sessions/{session_id}/documents, api_backend, documents, postgres, redis, s3 | — | — | not started | not run | 0/4 tested · 0/4 passing | — |
+| US-008 | EPIC-003 | Parse, chunk, and embed uploaded PDFs | US-008, US-008-T1, US-008-T2, US-008-T3, US-008-T4 | 3 | document_chunks, documents, gemini, postgres, redis, worker | — | — | not started | not run | 0/5 tested · 0/5 passing | — |
+| US-009 | EPIC-004 | Ask a question scoped to the active session's documents | US-009, US-009-T1, US-009-T2, US-009-T3, US-009-T4 | 4 | POST /sessions/{session_id}/messages, api_backend, document_chunks, documents, gemini, messages, postgres | — | — | not started | not run | 0/5 tested · 0/5 passing | — |
+| US-010 | EPIC-004 | View source citations for each answer | US-010 | 4 | POST /sessions/{session_id}/messages, api_backend, citations, messages, web_app | — | — | not started | not run | 0/2 tested · 0/2 passing | — |
+| US-011 | EPIC-005 | Retain and view full session chat history | US-011 | 4 | GET /sessions/{session_id}/messages, api_backend, citations, messages, postgres | — | — | not started | not run | 0/2 tested · 0/2 passing | — |
 <!-- sdlc:auto:end matrix -->
