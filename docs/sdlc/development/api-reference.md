@@ -7,7 +7,18 @@ _No routes found._
 <!-- sdlc:auto:end endpoints -->
 
 <!-- sdlc:auto:start drift -->
-_Code matches the designed API._
+**Designed but missing:**
+
+- GET /sessions
+- GET /sessions/{session_id}
+- GET /sessions/{session_id}/documents
+- GET /sessions/{session_id}/messages
+- POST /auth/login
+- POST /auth/logout
+- POST /auth/signup
+- POST /sessions
+- POST /sessions/{session_id}/documents
+- POST /sessions/{session_id}/messages
 <!-- sdlc:auto:end drift -->
 
 <!-- sdlc:auto:start source -->

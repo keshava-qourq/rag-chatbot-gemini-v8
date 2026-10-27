@@ -2,6 +2,331 @@
 openapi: 3.1.0
 info:
   title: Rag_chatbot_gemini_v8
-  version: architecture-v0
+  version: architecture-v1
   description: Designed API from the approved architecture (not extracted from code).
-paths: {}
+paths:
+  /auth/login:
+    post:
+      summary: Authenticate with email and password, issuing a JWT
+      description: Authenticate with email and password, issuing a JWT
+      operationId: post_auth_login
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: '{ email, password }'
+      responses:
+        '200':
+          description: '{ access_token }'
+  /auth/logout:
+    post:
+      summary: Invalidate the current session/token
+      description: Invalidate the current session/token
+      operationId: post_auth_logout
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: none
+      responses:
+        '200':
+          description: '{ status: ''ok'' }'
+      security:
+      - bearerAuth: []
+  /auth/signup:
+    post:
+      summary: Create a new account with email and password, enforcing complexity
+        and uniqueness
+      description: Create a new account with email and password, enforcing complexity
+        and uniqueness
+      operationId: post_auth_signup
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: '{ email, password }'
+      responses:
+        '200':
+          description: '{ access_token, user: { id, email } }'
+  /sessions:
+    get:
+      summary: List the authenticated user's own chat sessions
+      description: List the authenticated user's own chat sessions
+      operationId: get_sessions
+      parameters: []
+      responses:
+        '200':
+          description: '[{ id, name, created_at }]'
+      security:
+      - bearerAuth: []
+    post:
+      summary: Create a new, empty chat session for the authenticated user
+      description: Create a new, empty chat session for the authenticated user
+      operationId: post_sessions
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: '{ name? }'
+      responses:
+        '200':
+          description: '{ id, name, created_at }'
+      security:
+      - bearerAuth: []
+  /sessions/{session_id}:
+    get:
+      summary: Get a session's details, scoped to its owner
+      description: Get a session's details, scoped to its owner
+      operationId: get_sessions_session_id
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: '{ id, name, created_at }'
+      security:
+      - bearerAuth: []
+  /sessions/{session_id}/documents:
+    get:
+      summary: List documents attached to a session with their processing status
+      description: List documents attached to a session with their processing status
+      operationId: get_sessions_session_id_documents
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: '[{ id, filename, status, error_message, page_count }]'
+      security:
+      - bearerAuth: []
+    post:
+      summary: Upload a PDF (multipart) to a session, validated for type/size/per-session
+        cap, queued for processing
+      description: Upload a PDF (multipart) to a session, validated for type/size/per-session
+        cap, queued for processing
+      operationId: post_sessions_session_id_documents
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: multipart/form-data file
+      responses:
+        '200':
+          description: '{ id, filename, status: ''processing'' }'
+      security:
+      - bearerAuth: []
+  /sessions/{session_id}/messages:
+    get:
+      summary: Retrieve full chronological chat history for a session
+      description: Retrieve full chronological chat history for a session
+      operationId: get_sessions_session_id_messages
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: '[{ id, role, content, citations, created_at }]'
+      security:
+      - bearerAuth: []
+    post:
+      summary: Ask a question scoped to this session's ready documents and get a generated
+        answer with citations
+      description: Ask a question scoped to this session's ready documents and get
+        a generated answer with citations
+      operationId: post_sessions_session_id_messages
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: '{ question }'
+      responses:
+        '200':
+          description: '{ id, role: ''assistant'', content, citations: [{ document_id,
+            filename, page_number, snippet }] }'
+      security:
+      - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    users:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        password_hash:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - id
+      - email
+      - password_hash
+      - created_at
+    sessions:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - id
+      - user_id
+      - created_at
+    documents:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        session_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        s3_key:
+          type: string
+        size_bytes:
+          type: integer
+        page_count:
+          type: integer
+        status:
+          type: string
+        error_message:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - id
+      - session_id
+      - user_id
+      - filename
+      - s3_key
+      - size_bytes
+      - status
+      - created_at
+    document_chunks:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        document_id:
+          type: string
+          format: uuid
+        session_id:
+          type: string
+          format: uuid
+        chunk_index:
+          type: integer
+        page_number:
+          type: integer
+        content:
+          type: string
+        embedding:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - id
+      - document_id
+      - session_id
+      - chunk_index
+      - content
+      - embedding
+      - created_at
+    messages:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        session_id:
+          type: string
+          format: uuid
+        role:
+          type: string
+        content:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - id
+      - session_id
+      - role
+      - content
+      - created_at
+    citations:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        message_id:
+          type: string
+          format: uuid
+        document_id:
+          type: string
+          format: uuid
+        chunk_id:
+          type: string
+          format: uuid
+        page_number:
+          type: integer
+        snippet:
+          type: string
+      required:
+      - id
+      - message_id
+      - document_id
