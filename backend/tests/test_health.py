@@ -20,7 +20,7 @@ def test_health_reports_ok() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "ok"
-    assert set(body["services"]) == {"redis-queue"}
+    assert set(body["services"]) == {"postgres", "redis-queue", "s3"}
 
 
 def test_the_openapi_document_builds() -> None:
@@ -29,4 +29,10 @@ def test_the_openapi_document_builds() -> None:
     response = client.get("/openapi.json")
 
     assert response.status_code == 200
-    assert "/health" in response.json()["paths"]
+    paths = response.json()["paths"]
+    assert "/health" in paths
+    # Every endpoint the approved API spec declares already has a stub route,
+    # so the OpenAPI document the frontend builds against is complete from day one.
+    assert "/auth/signup" in paths
+    assert "/sessions/{session_id}/documents" in paths
+    assert "/sessions/{session_id}/messages" in paths

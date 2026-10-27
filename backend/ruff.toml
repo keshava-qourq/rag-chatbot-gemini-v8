@@ -3,6 +3,10 @@ target-version = "py312"
 
 [lint]
 select = ["E", "F", "I", "B", "UP"]
+# FastAPI's dependency-injection style hands `Depends(...)`, `File(...)`, `Query(...)`
+# etc. as parameter defaults by design; B008 (no function calls in argument defaults)
+# exists for the general footgun, not this idiom, and this is a FastAPI backend.
+ignore = ["B008"]
 
 [format]
 quote-style = "double"

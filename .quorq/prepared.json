@@ -1,0 +1,75 @@
+{
+  "key": {
+    "app_design_id": "5ab40c9a-1cba-43e6-8843-0e6613d5a2bf",
+    "app_design_version": 1,
+    "architecture_document_id": "e95ebdef-821d-4a90-962d-aa60d16804a4",
+    "architecture_version": 1
+  },
+  "outcome": "prepared",
+  "packages": [
+    {
+      "ecosystem": "pypi",
+      "installed_version": "2.8.0",
+      "name": "google-genai",
+      "status": "installed",
+      "version": ">=0.3.0"
+    },
+    {
+      "ecosystem": "pypi",
+      "installed_version": "6.21.3",
+      "name": "pypdf",
+      "status": "installed",
+      "version": ">=4.0"
+    },
+    {
+      "ecosystem": "pypi",
+      "installed_version": "2.12.0",
+      "name": "rq",
+      "status": "installed",
+      "version": ">=1.16"
+    },
+    {
+      "ecosystem": "pypi",
+      "installed_version": "0.5.1",
+      "name": "pgvector",
+      "status": "installed",
+      "version": ">=0.2.5"
+    },
+    {
+      "ecosystem": "pypi",
+      "installed_version": "1.7.4",
+      "name": "passlib[bcrypt]",
+      "status": "installed",
+      "version": ">=1.7.4"
+    },
+    {
+      "ecosystem": "pypi",
+      "installed_version": "3.5.0",
+      "name": "python-jose[cryptography]",
+      "status": "installed",
+      "version": ">=3.3"
+    },
+    {
+      "ecosystem": "pypi",
+      "installed_version": "1.43.120",
+      "name": "boto3",
+      "status": "installed",
+      "version": ">=1.34"
+    },
+    {
+      "ecosystem": "pypi",
+      "installed_version": "9.1.4",
+      "name": "tenacity",
+      "status": "installed",
+      "version": ">=8.2"
+    },
+    {
+      "ecosystem": "npm",
+      "error": "already provided by the scaffold",
+      "name": "react-pdf",
+      "status": "skipped",
+      "version": ">=7.7"
+    }
+  ],
+  "prepared_by_run": "33849bcf-065d-453e-9091-c69d93a9c064"
+}
