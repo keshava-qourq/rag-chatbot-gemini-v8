@@ -54,7 +54,10 @@ function messagesResponse(
 // mocked call by its path rather than relying on call order.
 function mockApiByPath(
   responses: Record<string, unknown>,
-  overrides: Array<{ match: (path: string, init?: RequestInit) => boolean; handler: () => unknown }> = [],
+  overrides: Array<{
+    match: (path: string, init?: RequestInit) => boolean;
+    handler: () => unknown;
+  }> = [],
 ) {
   mockedApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
     for (const { match, handler } of overrides) {
@@ -226,7 +229,9 @@ describe("SessionsSessionid ask/history/citations", () => {
             path === "/sessions/sess-1/messages" && (!init || init.method === "GET"),
           handler: () =>
             postCalled
-              ? messagesResponse([{ question: "What is the policy?", answer: "Here is the answer." }])
+              ? messagesResponse([
+                  { question: "What is the policy?", answer: "Here is the answer." },
+                ])
               : [],
         },
       ],
@@ -235,7 +240,9 @@ describe("SessionsSessionid ask/history/citations", () => {
     const user = userEvent.setup();
     render(<Screen />);
 
-    await waitFor(() => expect(screen.queryByText(/Loading conversation history/i)).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByText(/Loading conversation history/i)).not.toBeInTheDocument(),
+    );
 
     const input = screen.getByPlaceholderText(/Ask a question/i);
     await user.type(input, "What is the policy?");
@@ -333,7 +340,9 @@ describe("SessionsSessionid ask/history/citations", () => {
     const user = userEvent.setup();
     render(<Screen />);
 
-    await waitFor(() => expect(screen.queryByText(/Loading conversation history/i)).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByText(/Loading conversation history/i)).not.toBeInTheDocument(),
+    );
 
     const input = screen.getByPlaceholderText(/Ask a question/i);
     await user.type(input, "Any ready docs?");
@@ -367,7 +376,9 @@ describe("SessionsSessionid ask/history/citations", () => {
     const user = userEvent.setup();
     render(<Screen />);
 
-    await waitFor(() => expect(screen.queryByText(/Loading conversation history/i)).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByText(/Loading conversation history/i)).not.toBeInTheDocument(),
+    );
 
     const input = screen.getByPlaceholderText(/Ask a question/i);
     await user.type(input, "Will this fail?");
