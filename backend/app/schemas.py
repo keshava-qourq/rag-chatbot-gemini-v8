@@ -13,6 +13,11 @@ from pydantic import BaseModel, field_validator
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
+def _as_str(value: object) -> str:
+    """Stringify a UUID id field before validation; pass other values through."""
+    return str(value) if isinstance(value, uuid.UUID) else value
+
+
 class StubResponse(BaseModel):
     """What a generated route returns until someone implements it.
 
@@ -91,7 +96,7 @@ class SessionOut(BaseModel):
     @field_validator("id", mode="before")
     @classmethod
     def _stringify_id(cls, value: object) -> str:
-        return str(value) if isinstance(value, uuid.UUID) else value
+        return _as_str(value)
 
 
 class DocumentOut(BaseModel):
@@ -110,4 +115,53 @@ class DocumentOut(BaseModel):
     @field_validator("id", mode="before")
     @classmethod
     def _stringify_id(cls, value: object) -> str:
-        return str(value) if isinstance(value, uuid.UUID) else value
+        return _as_str(value)
+
+
+class MessageCreateRequest(BaseModel):
+    """POST /sessions/{session_id}/messages request body: `{ question }`."""
+
+    question: str
+
+    @field_validator("question")
+    @classmethod
+    def _non_empty(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("question must not be empty.")
+        return value
+
+
+class CitationOut(BaseModel):
+    """One citation attached to an assistant message."""
+
+    id: str
+    document_id: str
+    filename: str
+    page_number: int | None = None
+    snippet: str | None = None
+
+    model_config = {"from_attributes": True}
+
+    @field_validator("id", "document_id", mode="before")
+    @classmethod
+    def _stringify_id(cls, value: object) -> str:
+        return _as_str(value)
+
+
+class MessageOut(BaseModel):
+    """What GET/POST /sessions/{id}/messages return, one per message."""
+
+    id: str
+    session_id: str
+    role: str
+    content: str
+    citations: list[CitationOut] = []
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+    @field_validator("id", "session_id", mode="before")
+    @classmethod
+    def _stringify_id(cls, value: object) -> str:
+        return _as_str(value)
