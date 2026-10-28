@@ -1,12 +1,14 @@
 """Session, document and message routes.
 
 Sessions (GET/POST /sessions, GET /sessions/{id}) and documents
-(GET/POST /sessions/{id}/documents) are fully implemented here, scoped to the
-authenticated user via get_current_user and the shared get_owned_or_404
-helper (AC-008, AC-009, AC-010, NFR-005). Message routes remain stubs; that
-is a later sprint's work.
+(GET/POST /sessions/{id}/documents) are scoped to the authenticated user via
+get_current_user and the shared get_owned_or_404 helper (AC-008, AC-009,
+AC-010, NFR-005). Message routes retrieve chunks via app.rag and call
+gemini-2.5-flash to answer, persisting the Q/A pair and per-chunk citations
+(AC-022, AC-024, AC-025, AC-026).
 """
 
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
@@ -16,10 +18,27 @@ from app.config import MAX_DOCUMENTS_PER_SESSION, MAX_PDF_SIZE_BYTES
 from app.database import get_db
 from app.deps import get_current_user
 from app.jobs import enqueue_document_processing
-from app.models import ChatSession, Document, User
+from app.models import ChatSession, Citation, Document, Message, User
 from app.ownership import get_owned_or_404
-from app.schemas import DocumentOut, SessionCreateRequest, SessionOut, StubResponse
+from app.rag import (
+    NOT_FOUND_ANSWER,
+    GenerationCallError,
+    GenerationConfigError,
+    NoReadyDocumentsError,
+    generate_answer,
+    retrieve_chunks,
+)
+from app.schemas import (
+    CitationOut,
+    DocumentOut,
+    MessageCreateRequest,
+    MessageOut,
+    SessionCreateRequest,
+    SessionOut,
+)
 from app.storage import make_key, save
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["sessions"])
 
@@ -29,6 +48,27 @@ def _parse_session_id(session_id: str) -> uuid.UUID:
         return uuid.UUID(session_id)
     except ValueError:
         raise HTTPException(status_code=404, detail="Not found.") from None
+
+
+def _to_message_out(message: Message) -> MessageOut:
+    citations = [
+        CitationOut(
+            id=citation.id,
+            document_id=citation.document_id,
+            filename=citation.document.filename,
+            page_number=citation.page_number,
+            snippet=citation.snippet,
+        )
+        for citation in message.citations
+    ]
+    return MessageOut(
+        id=message.id,
+        session_id=message.session_id,
+        role=message.role,
+        content=message.content,
+        citations=citations,
+        created_at=message.created_at,
+    )
 
 
 @router.get("/sessions", response_model=list[SessionOut])
@@ -138,11 +178,95 @@ async def upload_document(
     return document
 
 
-@router.get("/sessions/{session_id}/messages", response_model=StubResponse)
-async def list_messages(session_id: str) -> StubResponse:
-    return StubResponse(endpoint="GET /sessions/{session_id}/messages")
+@router.get("/sessions/{session_id}/messages", response_model=list[MessageOut])
+async def list_messages(
+    session_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[MessageOut]:
+    sid = _parse_session_id(session_id)
+    get_owned_or_404(db, ChatSession, sid, current_user.id)
+    messages = (
+        db.query(Message)
+        .filter(Message.session_id == sid)
+        .order_by(Message.created_at.asc())
+        .all()
+    )
+    return [_to_message_out(message) for message in messages]
 
 
-@router.post("/sessions/{session_id}/messages", response_model=StubResponse)
-async def create_message(session_id: str) -> StubResponse:
-    return StubResponse(endpoint="POST /sessions/{session_id}/messages")
+@router.post("/sessions/{session_id}/messages", response_model=MessageOut)
+async def create_message(
+    session_id: str,
+    payload: MessageCreateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> MessageOut:
+    sid = _parse_session_id(session_id)
+    get_owned_or_404(db, ChatSession, sid, current_user.id)
+
+    question = payload.question
+
+    try:
+        chunks = retrieve_chunks(db, sid, question)
+    except NoReadyDocumentsError:
+        raise HTTPException(
+            status_code=422,
+            detail="This session has no ready documents available to answer from yet.",
+        ) from None
+    except GenerationConfigError:
+        logger.error("Session %s: Gemini is not configured for retrieval.", sid)
+        raise HTTPException(
+            status_code=503,
+            detail="The answer could not be generated because the Gemini API is not configured.",
+        ) from None
+    except GenerationCallError as exc:
+        logger.error("Session %s: failed to embed question: %s", sid, exc)
+        raise HTTPException(
+            status_code=502,
+            detail="The answer could not be generated because the Gemini API call failed. "
+            "Please try again later.",
+        ) from None
+
+    try:
+        answer = generate_answer(question, chunks)
+    except GenerationConfigError:
+        logger.error("Session %s: Gemini is not configured for generation.", sid)
+        raise HTTPException(
+            status_code=503,
+            detail="The answer could not be generated because the Gemini API is not configured.",
+        ) from None
+    except GenerationCallError as exc:
+        logger.error("Session %s: Gemini generation call failed: %s", sid, exc)
+        raise HTTPException(
+            status_code=502,
+            detail="The answer could not be generated because the Gemini API call failed. "
+            "Please try again later.",
+        ) from None
+
+    user_message = Message(session_id=sid, role="user", content=question)
+    db.add(user_message)
+
+    assistant_message = Message(session_id=sid, role="assistant", content=answer)
+    db.add(assistant_message)
+    db.flush()
+
+    # Only attach citations when an answer was actually grounded in the
+    # retrieved chunks -- not when the model reported it could not find one
+    # (AC-025): a "not found" answer should carry no sources.
+    if answer.strip() != NOT_FOUND_ANSWER:
+        for rc in chunks:
+            db.add(
+                Citation(
+                    message_id=assistant_message.id,
+                    document_id=rc.document.id,
+                    chunk_id=rc.chunk.id,
+                    page_number=rc.chunk.page_number,
+                    snippet=rc.chunk.content[:280],
+                )
+            )
+
+    db.commit()
+    db.refresh(assistant_message)
+
+    return _to_message_out(assistant_message)
