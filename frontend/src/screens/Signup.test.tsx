@@ -49,7 +49,11 @@ describe("Signup", () => {
 
   it("[AC-002] an email that already has an account shows the server's message, not a local demo-list check", async () => {
     mockedApiFetch.mockRejectedValueOnce(
-      new ApiError("POST /auth/signup failed: 409", 409, "An account with this email already exists."),
+      new ApiError(
+        "POST /auth/signup failed: 409",
+        409,
+        "An account with this email already exists.",
+      ),
     );
 
     const user = userEvent.setup();
@@ -84,7 +88,9 @@ describe("Signup", () => {
 
     await waitFor(() =>
       expect(
-        screen.getByText("Password must be at least 8 characters and include a letter and a number."),
+        screen.getByText(
+          "Password must be at least 8 characters and include a letter and a number.",
+        ),
       ).toBeInTheDocument(),
     );
     expect(navigateMock).not.toHaveBeenCalled();
