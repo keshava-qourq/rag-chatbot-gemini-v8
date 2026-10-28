@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 Build a rag chatbot where user can upload there own documents and ask queries about them use gemini-2.5-flash for answers and gemini-embedding-001 for embeddings and have chat history and sessions
 
-**Documentation version:** v28
+**Documentation version:** v29
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -15,7 +15,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 |---|---|
 | [Requirements](requirements/README.md) | v2 approved |
 | [Architecture](architecture/README.md) | 18 entries |
-| [Development](development/README.md) | 16 entries |
+| [Development](development/README.md) | 8 entries |
 | [Testing](testing/README.md) | 1 entry |
 | [Deployment](deployment/README.md) | 1 entry |
 | [Maintenance](maintenance/README.md) | 1 entry |
@@ -31,7 +31,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 | [Runbook](deployment/runbook.md) | deployed |
 | [Release notes](deployment/release-notes.md) | 12 releases |
 | [Traceability matrix](traceability-matrix.md) | 16 requirements |
-| [Changelog](CHANGELOG.md) | 28 versions |
+| [Changelog](CHANGELOG.md) | 29 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -56,23 +56,22 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 
 ### Development
 
-- No explicit mapping provided between backlog items and the sprint in which each was actually completed.
-- No explicit list of which backlog items (e.g. US-001..US-005) were assigned to or completed in this sprint was given.
-- No explicit list of which backlog items were assigned to or completed in this sprint was given.
-- No per-ticket completion/delivery status given for US-001 through US-004; only the overall dev run is marked 'completed'.
-- No per-ticket completion/delivery status given for US-005 or US-006.
-- Task-level (T1-T4) completion status not reported individually; only the aggregate dev run status of 'completed' is available.
-- Task-level completion status not reported individually for US-009's sub-tasks or for US-010.
-- No per-ticket completion/delivery status given for US-011.
-- Epic grouping not explicit in input (inferred from functional relationship to US-007).
-- No individual completion/delivery status reported for this ticket.
-- Epic grouping not explicit in input (inferred).
-- This is a deployment/runtime configuration concern; no confirmation of actual deployed execution is available in this development-phase input (belongs to deployment phase evidence).
-- Discrepancy: the run is marked 'completed' at the aggregate level, but no explicit status or commit evidence was provided for US-001 through US-015 individually -- their actual implementation/delivery state cannot be confirmed from this input.
+- No approver name or approval date recorded for plan v2.
+- No explicit mapping in the input of which sprint each individual story (e.g. US-012-US-016) was executed in; sprint-to-item assignment above is inferred only where sprint goal text clearly matches the epic/story content.
+- No ticket-level delivery status, commit, or completion date provided for US-001 through US-004 despite the overall run being marked 'completed'.
+- No ticket-level delivery status or commit provided for US-005 or US-006.
+- No ticket-level delivery status or commit provided for US-007, US-008, or any of their sub-tasks.
+- No ticket-level delivery status or commit provided for US-009, US-010, or US-009's sub-tasks.
+- No ticket-level delivery status or commit provided for US-011.
+- No ticket-level delivery status or commit provided for US-012, US-013, US-014, or US-015, even though US-016 (which functionally depends on their completion for E2E verification to pass) is marked delivered -- this is a discrepancy worth confirming.
+- Run-level status 'completed' is not individually corroborated for the other 24 plan items (epics, stories, and tasks); only US-016 has a ticket record with status and commit. Recommend confirming whether the remaining items were in fact completed or if ticket records are simply missing from this input.
 
 ### Testing
 
-- Testing phase has not started -- no test records available to document.
+- No ticket reference was provided for this check run, so it cannot be traced to a specific requirement, user story, or development ticket.
+- No breakdown of the 4 individual checks (names, scope, what each verified) was provided -- only an aggregate pass count.
+- No test plan, test case list, or formal QA sign-off was documented for this phase.
+- Coverage of the known requirements (US-001 through US-016) against this check run is unknown; none can be confidently linked as related_ids.
 
 ### Deployment
 
