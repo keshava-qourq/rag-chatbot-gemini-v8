@@ -114,8 +114,7 @@ async def upload_document(
         raise HTTPException(
             status_code=422,
             detail=(
-                f"This session already holds the maximum of "
-                f"{MAX_DOCUMENTS_PER_SESSION} documents."
+                f"This session already holds the maximum of {MAX_DOCUMENTS_PER_SESSION} documents."
             ),
         )
 
