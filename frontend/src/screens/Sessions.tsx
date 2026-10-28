@@ -27,25 +27,30 @@ function setActiveSessionId(id) {
 
 export default function Screen() {
   const navigate = useNavigate();
-  const seedSessions = [
-    { id: "sess-8f21", name: "Q3 Earnings Call Analysis", created_at: "2026-10-26T14:32:00" },
-    {
-      id: "sess-6c04",
-      name: "Lease Renewal – Riverside Office",
-      created_at: "2026-10-24T09:15:00",
-    },
-    { id: "sess-3a99", name: "Clinical Trial Protocol Review", created_at: "2026-10-22T18:47:00" },
-    { id: "sess-1d77", name: "Vendor MSA Redline", created_at: "2026-10-20T11:03:00" },
-    { id: "sess-9e42", name: "Immigration Policy Briefing", created_at: "2026-10-18T16:20:00" },
-    {
-      id: "sess-5b10",
-      name: "Thesis Literature Review – Soil Carbon",
-      created_at: "2026-10-14T08:55:00",
-    },
-  ];
 
-  const [sessions, setSessions] = React.useState(seedSessions);
+  const [sessions, setSessions] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [loadError, setLoadError] = React.useState(null);
   const [justCreatedId, setJustCreatedId] = React.useState(null);
+  const [creating, setCreating] = React.useState(false);
+
+  const loadSessions = React.useCallback(async () => {
+    setLoadError(null);
+    try {
+      // AC-007: list only the signed-in user's sessions, newest first.
+      const data = await apiFetch("/sessions", { method: "GET" });
+      setSessions(data ?? []);
+    } catch (err) {
+      setLoadError("Couldn't load your sessions. Try refreshing the page.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    setLoading(true);
+    loadSessions();
+  }, [loadSessions]);
 
   const formatDate = (iso) => {
     const d = new Date(iso);
@@ -58,18 +63,23 @@ export default function Screen() {
     return `${datePart} · ${timePart}`;
   };
 
-  const handleNewSession = () => {
-    const n = sessions.length + 1;
-    const newId = `sess-new-${Date.now()}`;
-    const newSession = {
-      id: newId,
-      name: `Untitled Session ${n}`,
-      created_at: new Date().toISOString(),
-    };
-    setSessions((prev) => [newSession, ...prev]);
-    setJustCreatedId(newId);
-    setActiveSessionId(newId);
-    navigate("sessions-sessionid");
+  const handleNewSession = async () => {
+    if (creating) return;
+    setCreating(true);
+    try {
+      const newSession = await apiFetch("/sessions", {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+      setSessions((prev) => [newSession, ...prev]);
+      setJustCreatedId(newSession.id);
+      setActiveSessionId(newSession.id);
+      navigate("sessions-sessionid");
+    } catch (err) {
+      setLoadError("Couldn't create a new session. Please try again.");
+    } finally {
+      setCreating(false);
+    }
   };
 
   const handleOpenSession = (id) => {
@@ -187,6 +197,7 @@ export default function Screen() {
             <Button
               data-wf="b-0-1"
               onClick={handleNewSession}
+              disabled={creating}
               className="sess-btn-primary"
               style={{
                 display: "inline-flex",
@@ -199,7 +210,8 @@ export default function Screen() {
                 color: "#06142b",
                 fontWeight: 800,
                 fontSize: 15,
-                cursor: "pointer",
+                cursor: creating ? "not-allowed" : "pointer",
+                opacity: creating ? 0.75 : 1,
                 boxShadow: `0 0 40px 0 rgba(232,121,249,0.35), 0 0 60px 0 rgba(34,211,238,0.25)`,
               }}
             >
@@ -209,8 +221,23 @@ export default function Screen() {
           </div>
         </div>
 
+        {loadError && (
+          <p
+            role="alert"
+            style={{
+              marginBottom: 20,
+              fontSize: 14,
+              color: "#fb7185",
+            }}
+          >
+            {loadError}
+          </p>
+        )}
+
         {/* Row 2 + Row 3 */}
-        {sessions.length === 0 ? (
+        {loading ? (
+          <p style={{ fontSize: 14, color: brand.neutralColor }}>Loading sessions…</p>
+        ) : sessions.length === 0 ? (
           <div
             data-wf="b-2-0"
             style={{
@@ -228,6 +255,7 @@ export default function Screen() {
               action={
                 <Button
                   onClick={handleNewSession}
+                  disabled={creating}
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
@@ -239,7 +267,7 @@ export default function Screen() {
                     color: "#06142b",
                     fontWeight: 800,
                     fontSize: 15,
-                    cursor: "pointer",
+                    cursor: creating ? "not-allowed" : "pointer",
                   }}
                 >
                   <Icons.Plus size={18} aria-hidden="true" />
@@ -311,7 +339,7 @@ export default function Screen() {
                         data-wf={`i-1-0-0-${s.id}`}
                         className="sess-row-link"
                         onClick={() => handleOpenSession(s.id)}
-                        aria-label={`Open session ${s.name}`}
+                        aria-label={`Open session ${s.name ?? "Untitled Session"}`}
                         style={{
                           all: "unset",
                           position: "absolute",
@@ -336,7 +364,7 @@ export default function Screen() {
                           aria-hidden="true"
                           style={{ color: brand.accentColor, flexShrink: 0 }}
                         />
-                        {s.name}
+                        {s.name ?? "Untitled Session"}
                         <Icons.ChevronRight
                           size={16}
                           aria-hidden="true"
