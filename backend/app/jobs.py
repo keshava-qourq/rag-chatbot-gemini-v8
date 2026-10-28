@@ -15,6 +15,7 @@ import uuid
 import redis
 from rq import Queue
 from rq.exceptions import DuplicateJobError
+from sqlalchemy.orm import Session
 
 from app.config import REDIS_URL
 from app.database import SessionLocal
@@ -32,6 +33,12 @@ def _queue() -> Queue:
     if _redis_conn is None:
         _redis_conn = redis.from_url(REDIS_URL)
     return Queue("documents", connection=_redis_conn)
+
+
+def _mark_failed(db: Session, doc: Document, message: str) -> None:
+    doc.status = "failed"
+    doc.error_message = message
+    db.commit()
 
 
 def process_document(document_id: str) -> None:
@@ -55,30 +62,28 @@ def process_document(document_id: str) -> None:
             data = load(doc.s3_key)
         except Exception as exc:  # noqa: BLE001 -- any storage failure is unrecoverable here
             logger.exception("Failed to load document %s from storage", document_id)
-            doc.status = "failed"
-            doc.error_message = f"Could not read the uploaded file: {exc}"
-            db.commit()
+            _mark_failed(db, doc, f"Could not read the uploaded file: {exc}")
             return
 
         try:
             chunk_pdf_bytes(data)
         except CorruptedPDFError as exc:
             logger.warning("Document %s is corrupted: %s", document_id, exc)
-            doc.status = "failed"
-            doc.error_message = (
+            _mark_failed(
+                db,
+                doc,
                 "This file could not be read as a PDF. It may be corrupted; "
-                "please re-export it and upload again."
+                "please re-export it and upload again.",
             )
-            db.commit()
             return
         except NoExtractableTextError as exc:
             logger.warning("Document %s has no extractable text: %s", document_id, exc)
-            doc.status = "failed"
-            doc.error_message = (
+            _mark_failed(
+                db,
+                doc,
                 "No text could be extracted from this PDF. It appears to be a scanned "
-                "or image-only document, which is not currently supported."
+                "or image-only document, which is not currently supported.",
             )
-            db.commit()
             return
 
         # Chunking succeeded; embedding + persistence is US-008-3's scope.
