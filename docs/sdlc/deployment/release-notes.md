@@ -3,6 +3,14 @@
 > Maintained by QuorQ AI SDLC. Text between `sdlc:auto` markers is regenerated; anything outside them is yours and is kept.
 
 <!-- sdlc:auto:start releases -->
+## 34b8c5ab2f05 — 2026-10-28
+
+**Commit:** `34b8c5a`
+
+**Delivered:**
+- US-014: Refresh Documents list to reflect real processing status
+- US-015: Run the RQ worker for the 'documents' queue alongside the API in the deployed container
+
 ## 481093554d43 — 2026-10-28
 
 **Commit:** `4810935`
