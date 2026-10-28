@@ -3,6 +3,14 @@
 > Maintained by QuorQ AI SDLC. Text between `sdlc:auto` markers is regenerated; anything outside them is yours and is kept.
 
 <!-- sdlc:auto:start releases -->
+## ccd2eddd464c — 2026-10-28
+
+**Commit:** `ccd2edd`
+
+**Delivered:**
+- US-006: View and switch between my sessions
+- US-007: Upload a PDF to a chat session
+
 ## 56d324cb54fd — 2026-10-28
 
 **Commit:** `56d324c`
