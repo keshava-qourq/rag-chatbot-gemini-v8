@@ -42,3 +42,12 @@ AWS_REGION: str = os.getenv("AWS_REGION", "us-east-1")
 # Gemini must treat an empty key as "cannot run" and fail clearly, and tests must
 # fake the call rather than reach the real API.
 GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+
+# Redis-backed job queue (app.jobs) for document processing (US-007/US-008).
+REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+# NFR-006: per-PDF upload size cap, ~20MB, enforced at the upload route.
+MAX_PDF_SIZE_BYTES: int = 20 * 1024 * 1024
+
+# NFR-007: maximum number of documents a single session may hold.
+MAX_DOCUMENTS_PER_SESSION: int = 20

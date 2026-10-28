@@ -5,6 +5,7 @@ generated route returns until it has been implemented.
 """
 
 import re
+import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, field_validator
@@ -86,3 +87,27 @@ class SessionOut(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def _stringify_id(cls, value: object) -> str:
+        return str(value) if isinstance(value, uuid.UUID) else value
+
+
+class DocumentOut(BaseModel):
+    """What GET/POST /sessions/{id}/documents return, one per document."""
+
+    id: str
+    filename: str
+    status: str
+    size_bytes: int
+    page_count: int | None = None
+    error_message: str | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def _stringify_id(cls, value: object) -> str:
+        return str(value) if isinstance(value, uuid.UUID) else value
