@@ -2,16 +2,22 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import Screen from "./SessionsSessionid";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, ApiError } from "@/lib/api";
 
 // US-012-1: Upload PDF form wired to the real POST /sessions/{id}/documents
 // endpoint (AC-031, AC-032). Client-side pre-checks (PDF type, 20MB size,
 // 5-doc cap) remain a fast local guard (AC-013..016), but accepted uploads
 // now go through apiFetch as multipart/form-data and the row that appears in
 // the table comes straight from the backend response.
-vi.mock("@/lib/api", () => ({
-  apiFetch: vi.fn(),
-}));
+//
+// US-013-1: when the backend rejects an upload (wrong type, oversized,
+// over-cap) or the request fails outright (network/auth), the form must
+// surface the real ApiError.detail verbatim, or a generic message only when
+// no backend detail is present -- never a fake success.
+vi.mock("@/lib/api", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
+  return { ...actual, apiFetch: vi.fn() };
+});
 
 vi.mock("@/lib/navigate", async () => {
   const actual = await vi.importActual<typeof import("@/lib/navigate")>("@/lib/navigate");
@@ -245,9 +251,128 @@ describe("SessionsSessionid PDF upload", () => {
 
     selectFile(pdfFile("broken.pdf", 500_000));
 
-    await waitFor(() =>
-      expect(screen.getByText(/couldn't be uploaded/i)).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText(/couldn't be uploaded/i)).toBeInTheDocument());
     expect(screen.queryByText("broken.pdf")).not.toBeInTheDocument();
+  });
+
+  it("[AC-033] a backend rejection for a disguised non-PDF upload shows the exact ApiError detail and adds no document", async () => {
+    mockedApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === "/sessions/sess-1/documents" && init?.method === "POST") {
+        throw new ApiError(
+          "POST /sessions/sess-1/documents failed: 415",
+          415,
+          "File content does not match a PDF (declared .pdf extension with mismatched content type).",
+        );
+      }
+      if (path === "/sessions/sess-1/documents") return [];
+      if (path === "/sessions/sess-1/messages") return [];
+      throw new Error(`Unexpected apiFetch call: ${path}`);
+    });
+
+    render(<Screen />);
+    await waitFor(() => expect(mockedApiFetch).toHaveBeenCalled());
+
+    selectFile(pdfFile("fake.pdf", 500_000));
+
+    await waitFor(() =>
+      expect(
+        screen.getByText(
+          "File content does not match a PDF (declared .pdf extension with mismatched content type).",
+        ),
+      ).toBeInTheDocument(),
+    );
+    expect(screen.queryByText("fake.pdf")).not.toBeInTheDocument();
+  });
+
+  it("[AC-033] a backend 413 oversized-file rejection shows the exact ApiError detail verbatim and adds no document", async () => {
+    mockedApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === "/sessions/sess-1/documents" && init?.method === "POST") {
+        throw new ApiError(
+          "POST /sessions/sess-1/documents failed: 413",
+          413,
+          "File exceeds the 20MB size limit.",
+        );
+      }
+      if (path === "/sessions/sess-1/documents") return [];
+      if (path === "/sessions/sess-1/messages") return [];
+      throw new Error(`Unexpected apiFetch call: ${path}`);
+    });
+
+    render(<Screen />);
+    await waitFor(() => expect(mockedApiFetch).toHaveBeenCalled());
+
+    selectFile(pdfFile("not-flagged-locally.pdf", 500_000));
+
+    await waitFor(() =>
+      expect(screen.getByText("File exceeds the 20MB size limit.")).toBeInTheDocument(),
+    );
+    expect(screen.queryByText("not-flagged-locally.pdf")).not.toBeInTheDocument();
+  });
+
+  it("[AC-033] a backend 409 document-cap rejection shows the exact ApiError detail verbatim and adds no document", async () => {
+    mockedApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === "/sessions/sess-1/documents" && init?.method === "POST") {
+        throw new ApiError(
+          "POST /sessions/sess-1/documents failed: 409",
+          409,
+          "This session already has the maximum of 5 documents.",
+        );
+      }
+      if (path === "/sessions/sess-1/documents") return [];
+      if (path === "/sessions/sess-1/messages") return [];
+      throw new Error(`Unexpected apiFetch call: ${path}`);
+    });
+
+    render(<Screen />);
+    await waitFor(() => expect(mockedApiFetch).toHaveBeenCalled());
+
+    selectFile(pdfFile("capped.pdf", 500_000));
+
+    await waitFor(() =>
+      expect(
+        screen.getByText("This session already has the maximum of 5 documents."),
+      ).toBeInTheDocument(),
+    );
+    expect(screen.queryByText("capped.pdf")).not.toBeInTheDocument();
+  });
+
+  it("[AC-034] a 401 auth failure with no backend detail shows a generic error state, not a simulated success", async () => {
+    mockedApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === "/sessions/sess-1/documents" && init?.method === "POST") {
+        throw new ApiError("POST /sessions/sess-1/documents failed: 401", 401);
+      }
+      if (path === "/sessions/sess-1/documents") return [];
+      if (path === "/sessions/sess-1/messages") return [];
+      throw new Error(`Unexpected apiFetch call: ${path}`);
+    });
+
+    render(<Screen />);
+    await waitFor(() => expect(mockedApiFetch).toHaveBeenCalled());
+
+    selectFile(pdfFile("unauth.pdf", 500_000));
+
+    await waitFor(() => expect(screen.getByText(/couldn't be uploaded/i)).toBeInTheDocument());
+    expect(screen.queryByText("unauth.pdf")).not.toBeInTheDocument();
+    expect(screen.queryByText(/was uploaded and is being processed/i)).not.toBeInTheDocument();
+  });
+
+  it("[AC-034] a plain network failure (no ApiError, no detail) shows a generic error state and adds no document", async () => {
+    mockedApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === "/sessions/sess-1/documents" && init?.method === "POST") {
+        throw new TypeError("Failed to fetch");
+      }
+      if (path === "/sessions/sess-1/documents") return [];
+      if (path === "/sessions/sess-1/messages") return [];
+      throw new Error(`Unexpected apiFetch call: ${path}`);
+    });
+
+    render(<Screen />);
+    await waitFor(() => expect(mockedApiFetch).toHaveBeenCalled());
+
+    selectFile(pdfFile("offline.pdf", 500_000));
+
+    await waitFor(() => expect(screen.getByText(/couldn't be uploaded/i)).toBeInTheDocument());
+    expect(screen.queryByText("offline.pdf")).not.toBeInTheDocument();
+    expect(screen.queryByText(/was uploaded and is being processed/i)).not.toBeInTheDocument();
   });
 });

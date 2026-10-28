@@ -20,6 +20,17 @@ import {
 // non-PDF, an oversized file, or a sixth file once the local cap is reached)
 // covered with real DOM rendering and a mocked apiFetch in
 // frontend/src/screens/SessionsSessionid.upload.test.tsx.
+//
+// US-013-2: AC-033/AC-034 require proving a *backend* rejection (not just the
+// client-side pre-check) renders the exact backend detail string on the real
+// screen, with no document added. The client-side pre-check short-circuits
+// any file whose declared type/extension obviously fails (AC-014/015/016
+// above), so to reach the server's own validation through the real rendered
+// <input type="file"> the file must pass the client's quick check (a ".pdf"
+// name) while still failing the server's stricter one (actual content-type
+// header sent with the multipart part) -- exactly the "disguised" case the
+// backend's `content_type_is_pdf and extension_is_pdf` check in
+// app/routers/sessions.py exists to catch.
 const API_BASE = process.env.E2E_API_BASE_URL ?? "http://127.0.0.1:8000";
 const AUTH_TOKEN_STORAGE_KEY = "access_token";
 
@@ -104,6 +115,43 @@ test(
     await expect(page.getByText(/was uploaded and is being processed/i)).toBeVisible();
     await expect(page.getByText("notes.pdf", { exact: true })).toBeVisible();
     await expect(page.getByText("Processing", { exact: true })).toBeVisible();
+
+    await api.dispose();
+  },
+);
+
+test(
+  "[AC-033] a disguised non-PDF (.pdf name, non-PDF content-type) submitted through the " +
+    "real rendered file input is rejected by the live backend with its exact detail " +
+    "message, and no row is added to the Documents table",
+  async ({ page }) => {
+    const api = await playwrightRequest.newContext({ baseURL: API_BASE });
+    const token = await signup(api, "ac033-ui-reject");
+    const sessionName = `UI Reject ${Date.now()}`;
+    const sessionId = await createSession(api, token, sessionName);
+
+    await injectToken(page, token);
+    await page.goto("/sessions");
+    await page.getByRole("button", { name: new RegExp(`Open session ${sessionName}`) }).click();
+
+    // Passes the screen's own quick local check (name ends in ".pdf"), but
+    // the actual bytes/declared content-type are not a PDF, so the live
+    // backend's stricter check (app/routers/sessions.py upload_document)
+    // rejects it with 422 "Only PDF files are supported." -- proving the
+    // *backend's* rejection path renders on-screen, not just the client guard.
+    const fileInput = page.locator("#pdf-file-input");
+    await fileInput.setInputFiles({
+      name: "disguised.pdf",
+      mimeType: "text/plain",
+      buffer: Buffer.from("not actually a pdf"),
+    });
+
+    await expect(page.getByText("Only PDF files are supported.")).toBeVisible();
+    await expect(page.getByText("disguised.pdf", { exact: true })).toHaveCount(0);
+    await expect(page.getByText(/was uploaded and is being processed/i)).toHaveCount(0);
+
+    const listing = await listDocuments(api, token, sessionId);
+    expect(await listing.json()).toEqual([]);
 
     await api.dispose();
   },
