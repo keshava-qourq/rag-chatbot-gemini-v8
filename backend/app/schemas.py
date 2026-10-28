@@ -4,6 +4,8 @@ One pair per entity in the approved data model, plus the placeholder every
 generated route returns until it has been implemented.
 """
 
+from datetime import datetime
+
 from pydantic import BaseModel, field_validator
 
 _EMAIL_RE = __import__("re").compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -67,3 +69,19 @@ class LogoutResponse(BaseModel):
     """What POST /auth/logout returns: `{ status: 'ok' }`."""
 
     status: str = "ok"
+
+
+class SessionCreateRequest(BaseModel):
+    """POST /sessions request body: `{ name? }`."""
+
+    name: str | None = None
+
+
+class SessionOut(BaseModel):
+    """What GET/POST /sessions and GET /sessions/{id} return: `{ id, name, created_at }`."""
+
+    id: str
+    name: str | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
