@@ -59,9 +59,7 @@ describe("Login", () => {
     await user.type(screen.getByLabelText(/Password/i), "wrongpass");
     await user.click(screen.getByRole("button", { name: /Log In/i }));
 
-    await waitFor(() =>
-      expect(screen.getByText("Invalid email or password.")).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText("Invalid email or password.")).toBeInTheDocument());
     expect(navigateMock).not.toHaveBeenCalled();
     expect(getToken()).toBeNull();
   });

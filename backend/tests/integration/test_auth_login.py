@@ -62,14 +62,11 @@ def test_ac004_correct_credentials_return_token_that_works_on_a_protected_route(
         _cleanup(email)
 
 
-def test_ac005_wrong_password_and_unknown_email_return_identical_generic_401(
-) -> None:
+def test_ac005_wrong_password_and_unknown_email_return_identical_generic_401() -> None:
     email = _unique_email()
     _signup(email)
     try:
-        wrong_password = client.post(
-            "/auth/login", json={"email": email, "password": "WrongPass1"}
-        )
+        wrong_password = client.post("/auth/login", json={"email": email, "password": "WrongPass1"})
         unknown_email = client.post(
             "/auth/login",
             json={"email": _unique_email(), "password": "WrongPass1"},
@@ -101,9 +98,7 @@ def test_ac006_expired_token_is_rejected_on_a_protected_route() -> None:
 
 
 def test_ac006_malformed_token_is_rejected_on_a_protected_route() -> None:
-    response = client.get(
-        "/sessions", headers={"Authorization": "Bearer not-a-real-jwt"}
-    )
+    response = client.get("/sessions", headers={"Authorization": "Bearer not-a-real-jwt"})
 
     assert response.status_code == 401
 
