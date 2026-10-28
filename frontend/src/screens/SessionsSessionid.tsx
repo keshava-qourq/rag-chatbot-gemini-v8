@@ -6,73 +6,111 @@ import * as UI from "@/lib/ui";
 import { Icons } from "@/lib/icons";
 import { brand } from "@/lib/brand";
 import { useNavigate } from "@/lib/navigate";
+import { apiFetch } from "@/lib/api";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 const { Button, Input, Label, Select, Table, THead, TBody, TR, TH, TD, Empty } = UI;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 const { Upload } = Icons;
+
+// This screen's route carries no :sessionId segment (see App.tsx), so the id
+// of the session that was opened travels via sessionStorage, set by
+// Sessions.tsx right before it navigates here.
+const ACTIVE_SESSION_STORAGE_KEY = "currentSessionId";
+
+// Turns the flat, chronological message list the API returns into
+// question/answer pairs for rendering. The backend always writes a user
+// message immediately followed by its assistant reply (sessions.py
+// create_message), so consecutive pairing is safe; a dangling user message
+// with no reply yet (a request in flight) is rendered as pending.
+function buildExchangesFromMessages(messages) {
+  const result = [];
+  let i = 0;
+  while (i < messages.length) {
+    const m = messages[i];
+    if (m.role === "user") {
+      const next = messages[i + 1];
+      if (next && next.role === "assistant") {
+        result.push({
+          id: next.id,
+          question: m.content,
+          answer: next.content,
+          citations: next.citations ?? [],
+          created_at: next.created_at,
+        });
+        i += 2;
+        continue;
+      }
+      result.push({
+        id: m.id,
+        question: m.content,
+        answer: null,
+        citations: [],
+        created_at: m.created_at,
+        pending: true,
+      });
+      i += 1;
+      continue;
+    }
+    i += 1;
+  }
+  return result;
+}
+
+// apiFetch only surfaces a generic `Error` whose message ends in the HTTP
+// status code (see lib/api.ts) -- pull that back out so we can branch on it.
+function extractStatus(error) {
+  const match = /(\d{3})\s*$/.exec(error?.message ?? "");
+  return match ? Number(match[1]) : null;
+}
+
+function readActiveSessionId() {
+  try {
+    return sessionStorage.getItem(ACTIVE_SESSION_STORAGE_KEY);
+  } catch (e) {
+    return null;
+  }
+}
 
 export default function Screen() {
   const navigate = useNavigate();
+  const [sessionId] = React.useState(readActiveSessionId);
   const MAX_DOCS = 5;
   const MAX_SIZE_BYTES = 20 * 1024 * 1024;
 
   const INITIAL_DOCUMENTS = [
     {
-      id: 'doc-policy',
-      filename: 'policy.pdf',
-      status: 'ready',
+      id: "doc-policy",
+      filename: "policy.pdf",
+      status: "ready",
       page_count: 12,
       size_bytes: 2_430_000,
       error_message: null,
-      created_at: '2026-10-24T09:12:00Z'
+      created_at: "2026-10-24T09:12:00Z",
     },
     {
-      id: 'doc-handbook',
-      filename: 'handbook.pdf',
-      status: 'ready',
+      id: "doc-handbook",
+      filename: "handbook.pdf",
+      status: "ready",
       page_count: 34,
       size_bytes: 8_120_000,
       error_message: null,
-      created_at: '2026-10-25T14:45:00Z'
+      created_at: "2026-10-25T14:45:00Z",
     },
     {
-      id: 'doc-marketscan',
-      filename: 'market-scan-2024.pdf',
-      status: 'failed',
+      id: "doc-marketscan",
+      filename: "market-scan-2024.pdf",
+      status: "failed",
       page_count: null,
       size_bytes: 5_310_000,
-      error_message: "No extractable text found — this looks like a scanned, image-only PDF. OCR isn't supported yet; please re-upload a text-based PDF.",
-      created_at: '2026-10-26T11:03:00Z'
-    }
-  ];
-
-  const INITIAL_EXCHANGES = [
-    {
-      id: 'ex-1',
-      question: 'Refund policy?',
-      answer: 'Refunds are accepted within 30 days of purchase, provided the item is unmodified and the original receipt is attached.',
-      citations: [{ filename: 'policy.pdf', page: 4 }],
-      created_at: '2026-10-25T16:02:00Z'
+      error_message:
+        "No extractable text found — this looks like a scanned, image-only PDF. OCR isn't supported yet; please re-upload a text-based PDF.",
+      created_at: "2026-10-26T11:03:00Z",
     },
-    {
-      id: 'ex-2',
-      question: 'Warranty coverage?',
-      answer: 'Could not be found in the attached documents.',
-      citations: [],
-      created_at: '2026-10-26T10:18:00Z'
-    },
-    {
-      id: 'ex-3',
-      question: 'Summarize section 2.',
-      answer: "Section 2 covers the company's data retention schedule and the consent requirements collected at sign-up.",
-      citations: [{ filename: 'handbook.pdf', page: 12 }],
-      created_at: '2026-10-26T18:41:00Z'
-    }
   ];
 
   function formatBytes(bytes) {
-    if (bytes == null) return '—';
+    if (bytes == null) return "—";
     const mb = bytes / (1024 * 1024);
     return mb >= 1 ? `${mb.toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
   }
@@ -80,32 +118,37 @@ export default function Screen() {
   function formatTime(iso) {
     try {
       return new Date(iso).toLocaleString(undefined, {
-        month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
       });
     } catch (e) {
-      return '';
+      return "";
     }
   }
 
   const glassStyle = {
     borderRadius: brand.radius,
-    background: 'rgba(255,255,255,0.07)',
-    border: '1px solid rgba(255,255,255,0.14)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)'
+    background: "rgba(255,255,255,0.07)",
+    border: "1px solid rgba(255,255,255,0.14)",
+    backdropFilter: "blur(20px)",
+    WebkitBackdropFilter: "blur(20px)",
   };
 
   const [documents, setDocuments] = React.useState(INITIAL_DOCUMENTS);
-  const [exchanges, setExchanges] = React.useState(INITIAL_EXCHANGES);
-  const [question, setQuestion] = React.useState('');
+  const [exchanges, setExchanges] = React.useState([]);
+  const [historyLoading, setHistoryLoading] = React.useState(true);
+  const [historyError, setHistoryError] = React.useState(null);
+  const [question, setQuestion] = React.useState("");
   const [asking, setAsking] = React.useState(false);
   const [askWarning, setAskWarning] = React.useState(null);
+  const [askError, setAskError] = React.useState(null);
   const [uploadMessage, setUploadMessage] = React.useState(null);
   const [uploadIsError, setUploadIsError] = React.useState(false);
   const idCounter = React.useRef(0);
   const fileInputRef = React.useRef(null);
   const processingTimers = React.useRef({});
-  const askTimer = React.useRef(null);
 
   function nextId(prefix) {
     idCounter.current += 1;
@@ -115,13 +158,12 @@ export default function Screen() {
   React.useEffect(() => {
     return () => {
       Object.values(processingTimers.current).forEach(clearTimeout);
-      if (askTimer.current) clearTimeout(askTimer.current);
     };
   }, []);
 
   React.useEffect(() => {
     documents.forEach((doc) => {
-      if (doc.status === 'processing' && !processingTimers.current[doc.id]) {
+      if (doc.status === "processing" && !processingTimers.current[doc.id]) {
         processingTimers.current[doc.id] = setTimeout(() => {
           setDocuments((prev) =>
             prev.map((d) => {
@@ -130,14 +172,14 @@ export default function Screen() {
               if (looksScanned) {
                 return {
                   ...d,
-                  status: 'failed',
+                  status: "failed",
                   error_message:
-                    "No extractable text found — this looks like a scanned, image-only PDF. OCR isn't supported yet; please re-upload a text-based PDF."
+                    "No extractable text found — this looks like a scanned, image-only PDF. OCR isn't supported yet; please re-upload a text-based PDF.",
                 };
               }
               const estimatedPages = Math.max(1, Math.round(d.size_bytes / 160000));
-              return { ...d, status: 'ready', page_count: estimatedPages, error_message: null };
-            })
+              return { ...d, status: "ready", page_count: estimatedPages, error_message: null };
+            }),
           );
           delete processingTimers.current[doc.id];
         }, 2200);
@@ -145,127 +187,136 @@ export default function Screen() {
     });
   }, [documents]);
 
-  const readyDocs = documents.filter((d) => d.status === 'ready');
+  const loadHistory = React.useCallback(async () => {
+    if (!sessionId) {
+      setHistoryLoading(false);
+      return;
+    }
+    setHistoryError(null);
+    try {
+      const messages = await apiFetch(`/sessions/${sessionId}/messages`, { method: "GET" });
+      setExchanges(buildExchangesFromMessages(messages ?? []));
+    } catch (err) {
+      setHistoryError("Couldn't load the conversation history. Try refreshing the page.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [sessionId]);
+
+  React.useEffect(() => {
+    setHistoryLoading(true);
+    loadHistory();
+  }, [loadHistory]);
 
   function handleFileChange(e) {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
     setUploadIsError(false);
 
-    const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+    const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
     if (!isPdf) {
       setUploadIsError(true);
-      setUploadMessage(`"${file.name}" isn't a PDF. Only PDF files are supported for this session.`);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      setUploadMessage(
+        `"${file.name}" isn't a PDF. Only PDF files are supported for this session.`,
+      );
+      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
     if (file.size > MAX_SIZE_BYTES) {
       setUploadIsError(true);
-      setUploadMessage(`"${file.name}" is ${formatBytes(file.size)}, which is over the 20MB per-file limit.`);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      setUploadMessage(
+        `"${file.name}" is ${formatBytes(file.size)}, which is over the 20MB per-file limit.`,
+      );
+      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
     if (documents.length >= MAX_DOCS) {
       setUploadIsError(true);
-      setUploadMessage(`This session already has ${MAX_DOCS} of ${MAX_DOCS} documents attached, the maximum allowed. Open a new session to add more.`);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      setUploadMessage(
+        `This session already has ${MAX_DOCS} of ${MAX_DOCS} documents attached, the maximum allowed. Open a new session to add more.`,
+      );
+      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
     const newDoc = {
-      id: nextId('doc'),
+      id: nextId("doc"),
       filename: file.name,
-      status: 'processing',
+      status: "processing",
       page_count: null,
       size_bytes: file.size,
       error_message: null,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
     setDocuments((prev) => [...prev, newDoc]);
     setUploadIsError(false);
     setUploadMessage(`"${file.name}" was uploaded and is being processed.`);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  function generateAnswer(text) {
-    const lower = text.toLowerCase();
-    if (lower.includes('refund')) {
-      return {
-        answer: 'Refunds are accepted within 30 days of purchase, provided the item is unmodified and the original receipt is attached.',
-        citations: [{ filename: 'policy.pdf', page: 4 }]
-      };
-    }
-    if (lower.includes('warranty')) {
-      return { answer: 'Could not be found in the attached documents.', citations: [] };
-    }
-    if (lower.includes('section 2') || lower.includes('summarize') || lower.includes('summarise')) {
-      return {
-        answer: "Section 2 covers the company's data retention schedule and the consent requirements collected at sign-up.",
-        citations: [{ filename: 'handbook.pdf', page: 12 }]
-      };
-    }
-    if (lower.includes('pricing') || lower.includes('price') || lower.includes('cost')) {
-      return {
-        answer: 'Pricing tiers are listed in the appendix, though that section did not retain page numbers during extraction.',
-        citations: [{ filename: 'handbook.pdf', page: null }]
-      };
-    }
-    if (lower.includes('market') || lower.includes('competitor')) {
-      return { answer: 'Could not be found in the attached documents.', citations: [] };
-    }
-    return {
-      answer: "That doesn't appear to be covered in the documents attached to this session.",
-      citations: []
-    };
-  }
-
-  function handleAsk(e) {
+  async function handleAsk(e) {
     e.preventDefault();
     const trimmed = question.trim();
-    if (!trimmed) return;
+    if (!trimmed || !sessionId) return;
 
-    if (readyDocs.length === 0) {
-      setAskWarning(
-        'No ready documents yet. Upload a PDF above and wait for it to finish processing before asking a question.'
-      );
-      return;
-    }
     setAskWarning(null);
+    setAskError(null);
 
-    const pendingId = nextId('ex');
-    const createdAt = new Date().toISOString();
+    const pendingId = nextId("ex");
     setExchanges((prev) => [
       ...prev,
-      { id: pendingId, question: trimmed, answer: null, citations: [], created_at: createdAt, pending: true }
+      {
+        id: pendingId,
+        question: trimmed,
+        answer: null,
+        citations: [],
+        created_at: new Date().toISOString(),
+        pending: true,
+      },
     ]);
-    setQuestion('');
+    setQuestion("");
     setAsking(true);
 
-    askTimer.current = setTimeout(() => {
-      const result = generateAnswer(trimmed);
-      setExchanges((prev) =>
-        prev.map((ex) =>
-          ex.id === pendingId
-            ? { ...ex, answer: result.answer, citations: result.citations, pending: false }
-            : ex
-        )
-      );
+    try {
+      await apiFetch(`/sessions/${sessionId}/messages`, {
+        method: "POST",
+        body: JSON.stringify({ question: trimmed }),
+      });
+      await loadHistory();
+    } catch (err) {
+      setExchanges((prev) => prev.filter((ex) => ex.id !== pendingId));
+      setQuestion(trimmed);
+      const status = extractStatus(err);
+      if (status === 422) {
+        setAskWarning(
+          "No ready documents yet. Upload a PDF above and wait for it to finish processing before asking a question.",
+        );
+      } else {
+        setAskError(
+          "The answer could not be generated right now. Please try again in a moment.",
+        );
+      }
+    } finally {
       setAsking(false);
-    }, 1300);
+    }
   }
 
   function StatusBadge({ status }) {
     const map = {
-      ready: { label: 'Ready', Icon: Icons.CheckCircle, color: '#34d399' },
-      processing: { label: 'Processing', Icon: Icons.Clock, color: '#fbbf24' },
-      failed: { label: 'Failed', Icon: Icons.AlertCircle, color: '#fb7185' }
+      ready: { label: "Ready", Icon: Icons.CheckCircle, color: "#34d399" },
+      processing: { label: "Processing", Icon: Icons.Clock, color: "#fbbf24" },
+      failed: { label: "Failed", Icon: Icons.AlertCircle, color: "#fb7185" },
     };
     const cfg = map[status] || map.processing;
     const Icon = cfg.Icon;
     return (
       <span
         className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
-        style={{ color: cfg.color, background: `${cfg.color}1f`, border: `1px solid ${cfg.color}40` }}
+        style={{
+          color: cfg.color,
+          background: `${cfg.color}1f`,
+          border: `1px solid ${cfg.color}40`,
+        }}
       >
         <Icon size={13} aria-hidden="true" />
         {cfg.label}
@@ -276,7 +327,7 @@ export default function Screen() {
   return (
     <div
       className="min-h-full w-full px-4 py-6 md:px-8 md:py-8"
-      style={{ fontFamily: brand.fontBody, color: '#e7edf6' }}
+      style={{ fontFamily: brand.fontBody, color: "#e7edf6" }}
     >
       <div className="mx-auto flex max-w-6xl flex-col gap-6">
         {/* Row 1 */}
@@ -285,9 +336,12 @@ export default function Screen() {
             type="button"
             data-wf="b-0-0"
             aria-label="Back to sessions"
-            onClick={() => navigate('sessions')}
+            onClick={() => navigate("sessions")}
             className="mt-1 flex h-11 w-11 flex-none items-center justify-center rounded-full transition-colors duration-150 hover:bg-white/10 focus:outline-none focus-visible:ring-2"
-            style={{ border: '1px solid rgba(255,255,255,0.16)', ['--tw-ring-color']: brand.primaryColor }}
+            style={{
+              border: "1px solid rgba(255,255,255,0.16)",
+              ["--tw-ring-color"]: brand.primaryColor,
+            }}
           >
             <Icons.ArrowLeft size={18} aria-hidden="true" />
           </button>
@@ -309,16 +363,26 @@ export default function Screen() {
             style={glassStyle}
             aria-labelledby="documents-heading"
           >
-            <h2 id="documents-heading" className="mb-3 text-lg font-semibold" style={{ fontFamily: brand.fontHeading }}>
+            <h2
+              id="documents-heading"
+              className="mb-3 text-lg font-semibold"
+              style={{ fontFamily: brand.fontHeading }}
+            >
               Documents
             </h2>
             <div className="overflow-x-auto">
               <Table>
                 <THead>
                   <TR>
-                    <TH data-wf="i-1-0-0" scope="col">Filename</TH>
-                    <TH data-wf="i-1-0-1" scope="col">Status</TH>
-                    <TH data-wf="i-1-0-2" scope="col" className="text-right">Pages</TH>
+                    <TH data-wf="i-1-0-0" scope="col">
+                      Filename
+                    </TH>
+                    <TH data-wf="i-1-0-1" scope="col">
+                      Status
+                    </TH>
+                    <TH data-wf="i-1-0-2" scope="col" className="text-right">
+                      Pages
+                    </TH>
                   </TR>
                 </THead>
                 <TBody>
@@ -326,19 +390,26 @@ export default function Screen() {
                     <TR key={doc.id}>
                       <TD>
                         <div className="flex flex-col">
-                          <span className="font-medium" style={{ color: '#f3f6fb' }}>{doc.filename}</span>
+                          <span className="font-medium" style={{ color: "#f3f6fb" }}>
+                            {doc.filename}
+                          </span>
                           <span className="text-xs" style={{ color: brand.neutralColor }}>
                             {formatBytes(doc.size_bytes)}
                           </span>
-                          {doc.status === 'failed' && doc.error_message && (
-                            <span className="mt-1 max-w-[220px] text-xs" style={{ color: '#fb7185' }}>
+                          {doc.status === "failed" && doc.error_message && (
+                            <span
+                              className="mt-1 max-w-[220px] text-xs"
+                              style={{ color: "#fb7185" }}
+                            >
                               {doc.error_message}
                             </span>
                           )}
                         </div>
                       </TD>
-                      <TD><StatusBadge status={doc.status} /></TD>
-                      <TD className="text-right tabular-nums">{doc.page_count ?? '—'}</TD>
+                      <TD>
+                        <StatusBadge status={doc.status} />
+                      </TD>
+                      <TD className="text-right tabular-nums">{doc.page_count ?? "—"}</TD>
                     </TR>
                   ))}
                 </TBody>
@@ -353,12 +424,20 @@ export default function Screen() {
             style={glassStyle}
             aria-labelledby="upload-heading"
           >
-            <h2 id="upload-heading" className="mb-3 text-lg font-semibold" style={{ fontFamily: brand.fontHeading }}>
+            <h2
+              id="upload-heading"
+              className="mb-3 text-lg font-semibold"
+              style={{ fontFamily: brand.fontHeading }}
+            >
               Upload PDF
             </h2>
             <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-3">
               <div>
-                <Label htmlFor="pdf-file-input" className="mb-1.5 block text-sm" style={{ color: brand.neutralColor }}>
+                <Label
+                  htmlFor="pdf-file-input"
+                  className="mb-1.5 block text-sm"
+                  style={{ color: brand.neutralColor }}
+                >
                   Select PDF file (max 20MB)
                 </Label>
                 <input
@@ -372,12 +451,12 @@ export default function Screen() {
                   className="block w-full text-sm file:mr-3 file:rounded-full file:border-0 file:px-4 file:py-2 file:text-sm file:font-medium focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50"
                   style={{
                     color: brand.neutralColor,
-                    ['--tw-ring-color']: brand.accentColor
+                    ["--tw-ring-color"]: brand.accentColor,
                   }}
                 />
               </div>
               {documents.length >= MAX_DOCS && (
-                <p className="text-xs" style={{ color: '#fbbf24' }}>
+                <p className="text-xs" style={{ color: "#fbbf24" }}>
                   Document limit reached for this session. Open a new session to upload more.
                 </p>
               )}
@@ -386,7 +465,7 @@ export default function Screen() {
                   role="status"
                   aria-live="polite"
                   className="flex items-start gap-1.5 text-xs"
-                  style={{ color: uploadIsError ? '#fb7185' : '#34d399' }}
+                  style={{ color: uploadIsError ? "#fb7185" : "#34d399" }}
                 >
                   {uploadIsError ? (
                     <Icons.AlertCircle size={14} className="mt-0.5 flex-none" aria-hidden="true" />
@@ -402,9 +481,9 @@ export default function Screen() {
           {/* Helper text */}
           <aside data-wf="b-1-2" className="md:col-span-3 flex items-center p-5" style={glassStyle}>
             <p className="text-sm leading-relaxed" style={{ color: brand.neutralColor }}>
-              <span className="font-semibold tabular-nums" style={{ color: '#f3f6fb' }}>
+              <span className="font-semibold tabular-nums" style={{ color: "#f3f6fb" }}>
                 {documents.length} of {MAX_DOCS}
-              </span>{' '}
+              </span>{" "}
               documents attached. PDF only, 20MB limit per file.
             </p>
           </aside>
@@ -417,10 +496,27 @@ export default function Screen() {
           style={glassStyle}
           aria-labelledby="history-heading"
         >
-          <h2 id="history-heading" className="mb-4 text-lg font-semibold" style={{ fontFamily: brand.fontHeading }}>
+          <h2
+            id="history-heading"
+            className="mb-4 text-lg font-semibold"
+            style={{ fontFamily: brand.fontHeading }}
+          >
             Conversation History
           </h2>
-          {exchanges.length === 0 ? (
+          {historyLoading ? (
+            <p
+              className="flex items-center gap-2 text-sm"
+              style={{ color: brand.neutralColor }}
+            >
+              <Icons.Clock size={14} aria-hidden="true" />
+              Loading conversation history…
+            </p>
+          ) : historyError ? (
+            <p role="alert" className="flex items-center gap-2 text-sm" style={{ color: "#fb7185" }}>
+              <Icons.AlertCircle size={15} aria-hidden="true" />
+              {historyError}
+            </p>
+          ) : exchanges.length === 0 ? (
             <Empty
               title="No questions asked yet"
               description="Once a document finishes processing, ask something about it below and the answer, with citations, will show up here."
@@ -428,7 +524,7 @@ export default function Screen() {
           ) : (
             <ul className="flex flex-col gap-4">
               {exchanges.map((ex, idx) => {
-                const wfId = idx < 3 ? ['i-2-0-0', 'i-2-0-1', 'i-2-0-2'][idx] : undefined;
+                const wfId = idx < 3 ? ["i-2-0-0", "i-2-0-1", "i-2-0-2"][idx] : undefined;
                 return (
                   <li
                     key={ex.id}
@@ -436,11 +532,11 @@ export default function Screen() {
                     className="rounded-2xl p-4 transition-opacity duration-300"
                     style={{
                       borderRadius: brand.radius,
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.10)'
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.10)",
                     }}
                   >
-                    <p className="text-sm font-semibold" style={{ color: '#f3f6fb' }}>
+                    <p className="text-sm font-semibold" style={{ color: "#f3f6fb" }}>
                       <span style={{ color: brand.primaryColor }}>Q:</span> {ex.question}
                     </p>
                     {ex.pending ? (
@@ -453,24 +549,24 @@ export default function Screen() {
                       </p>
                     ) : (
                       <>
-                        <p className="mt-2 text-sm leading-relaxed" style={{ color: '#dfe7f2' }}>
+                        <p className="mt-2 text-sm leading-relaxed" style={{ color: "#dfe7f2" }}>
                           <span style={{ color: brand.accentColor }}>A:</span> {ex.answer}
                         </p>
                         {ex.citations.length > 0 && (
                           <div className="mt-2.5 flex flex-wrap gap-2">
-                            {ex.citations.map((c, i) => (
+                            {ex.citations.map((c) => (
                               <span
-                                key={i}
+                                key={c.id ?? `${c.filename}-${c.page_number}`}
                                 className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs"
                                 style={{
                                   color: brand.primaryColor,
                                   background: `${brand.primaryColor}14`,
-                                  border: `1px solid ${brand.primaryColor}3a`
+                                  border: `1px solid ${brand.primaryColor}3a`,
                                 }}
                               >
                                 <Icons.FileText size={12} aria-hidden="true" />
                                 {c.filename}
-                                {c.page != null ? `, p.${c.page}` : ''}
+                                {c.page_number != null ? `, p.${c.page_number}` : ""}
                               </span>
                             ))}
                           </div>
@@ -493,10 +589,20 @@ export default function Screen() {
             <p
               role="alert"
               className="mb-2 flex items-center gap-2 text-sm"
-              style={{ color: '#fbbf24' }}
+              style={{ color: "#fbbf24" }}
             >
               <Icons.AlertCircle size={15} aria-hidden="true" />
               {askWarning}
+            </p>
+          )}
+          {askError && (
+            <p
+              role="alert"
+              className="mb-2 flex items-center gap-2 text-sm"
+              style={{ color: "#fb7185" }}
+            >
+              <Icons.AlertCircle size={15} aria-hidden="true" />
+              {askError}
             </p>
           )}
           <form
@@ -505,7 +611,7 @@ export default function Screen() {
             className="grid grid-cols-1 gap-3 p-3 md:grid-cols-12 md:items-end"
             style={{
               ...glassStyle,
-              boxShadow: `0 0 70px -20px ${brand.accentColor}70`
+              boxShadow: `0 0 70px -20px ${brand.accentColor}70`,
             }}
           >
             <div className="md:col-span-10">
@@ -522,10 +628,10 @@ export default function Screen() {
                 className="w-full focus:outline-none focus-visible:ring-2"
                 style={{
                   borderRadius: brand.radius,
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.18)',
-                  color: '#f3f6fb',
-                  ['--tw-ring-color']: brand.primaryColor
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.18)",
+                  color: "#f3f6fb",
+                  ["--tw-ring-color"]: brand.primaryColor,
                 }}
               />
             </div>
@@ -538,9 +644,9 @@ export default function Screen() {
                 style={{
                   borderRadius: brand.radius,
                   background: `linear-gradient(135deg, ${brand.primaryColor}, ${brand.accentColor})`,
-                  color: '#061018',
-                  padding: '0.7rem 1rem',
-                  ['--tw-ring-color']: brand.accentColor
+                  color: "#061018",
+                  padding: "0.7rem 1rem",
+                  ["--tw-ring-color"]: brand.accentColor,
                 }}
               >
                 {asking ? (
