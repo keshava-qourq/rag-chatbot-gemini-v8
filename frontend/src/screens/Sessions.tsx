@@ -7,13 +7,21 @@ import { Icons } from "@/lib/icons";
 import { brand } from "@/lib/brand";
 import { useNavigate } from "@/lib/navigate";
 
- 
 const { Button, Table, THead, TBody, TR, TH, TD, Empty } = UI;
 
 // The session detail screen's route (unchanged by this ticket) carries no
 // :sessionId segment, so the id it needs to call /sessions/{id}/messages is
 // handed off here, the only place that knows which row was opened.
 const ACTIVE_SESSION_STORAGE_KEY = "currentSessionId";
+
+function setActiveSessionId(id) {
+  try {
+    sessionStorage.setItem(ACTIVE_SESSION_STORAGE_KEY, id);
+  } catch (e) {
+    // sessionStorage unavailable (e.g. private browsing) -- the detail
+    // screen will fall back to its own empty state.
+  }
+}
 
 export default function Screen() {
   const navigate = useNavigate();
@@ -58,21 +66,12 @@ export default function Screen() {
     };
     setSessions((prev) => [newSession, ...prev]);
     setJustCreatedId(newId);
-    try {
-      sessionStorage.setItem(ACTIVE_SESSION_STORAGE_KEY, newId);
-    } catch (e) {
-      // sessionStorage unavailable (e.g. private browsing) -- the detail
-      // screen will fall back to its own empty state.
-    }
+    setActiveSessionId(newId);
     navigate("sessions-sessionid");
   };
 
   const handleOpenSession = (id) => {
-    try {
-      sessionStorage.setItem(ACTIVE_SESSION_STORAGE_KEY, id);
-    } catch (e) {
-      // see note above
-    }
+    setActiveSessionId(id);
     navigate("sessions-sessionid");
   };
 

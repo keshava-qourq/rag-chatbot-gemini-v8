@@ -8,10 +8,7 @@ import { brand } from "@/lib/brand";
 import { useNavigate } from "@/lib/navigate";
 import { apiFetch } from "@/lib/api";
 
- 
-const { Button, Input, Label, Select, Table, THead, TBody, TR, TH, TD, Empty } = UI;
- 
-const { Upload } = Icons;
+const { Button, Input, Label, Table, THead, TBody, TR, TH, TD, Empty } = UI;
 
 // This screen's route carries no :sessionId segment (see App.tsx), so the id
 // of the session that was opened travels via sessionStorage, set by
@@ -155,6 +152,16 @@ export default function Screen() {
     return `${prefix}-${Date.now()}-${idCounter.current}`;
   }
 
+  function resetFileInput() {
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function rejectUpload(message) {
+    setUploadIsError(true);
+    setUploadMessage(message);
+    resetFileInput();
+  }
+
   React.useEffect(() => {
     return () => {
       Object.values(processingTimers.current).forEach(clearTimeout);
@@ -215,27 +222,19 @@ export default function Screen() {
 
     const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
     if (!isPdf) {
-      setUploadIsError(true);
-      setUploadMessage(
-        `"${file.name}" isn't a PDF. Only PDF files are supported for this session.`,
-      );
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      rejectUpload(`"${file.name}" isn't a PDF. Only PDF files are supported for this session.`);
       return;
     }
     if (file.size > MAX_SIZE_BYTES) {
-      setUploadIsError(true);
-      setUploadMessage(
+      rejectUpload(
         `"${file.name}" is ${formatBytes(file.size)}, which is over the 20MB per-file limit.`,
       );
-      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
     if (documents.length >= MAX_DOCS) {
-      setUploadIsError(true);
-      setUploadMessage(
+      rejectUpload(
         `This session already has ${MAX_DOCS} of ${MAX_DOCS} documents attached, the maximum allowed. Open a new session to add more.`,
       );
-      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
@@ -251,7 +250,7 @@ export default function Screen() {
     setDocuments((prev) => [...prev, newDoc]);
     setUploadIsError(false);
     setUploadMessage(`"${file.name}" was uploaded and is being processed.`);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    resetFileInput();
   }
 
   async function handleAsk(e) {
@@ -292,9 +291,7 @@ export default function Screen() {
           "No ready documents yet. Upload a PDF above and wait for it to finish processing before asking a question.",
         );
       } else {
-        setAskError(
-          "The answer could not be generated right now. Please try again in a moment.",
-        );
+        setAskError("The answer could not be generated right now. Please try again in a moment.");
       }
     } finally {
       setAsking(false);
@@ -504,15 +501,16 @@ export default function Screen() {
             Conversation History
           </h2>
           {historyLoading ? (
-            <p
-              className="flex items-center gap-2 text-sm"
-              style={{ color: brand.neutralColor }}
-            >
+            <p className="flex items-center gap-2 text-sm" style={{ color: brand.neutralColor }}>
               <Icons.Clock size={14} aria-hidden="true" />
               Loading conversation history…
             </p>
           ) : historyError ? (
-            <p role="alert" className="flex items-center gap-2 text-sm" style={{ color: "#fb7185" }}>
+            <p
+              role="alert"
+              className="flex items-center gap-2 text-sm"
+              style={{ color: "#fb7185" }}
+            >
               <Icons.AlertCircle size={15} aria-hidden="true" />
               {historyError}
             </p>
