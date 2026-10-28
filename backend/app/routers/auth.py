@@ -26,9 +26,7 @@ from app.security import (
 
 router = APIRouter(tags=["auth"])
 
-_INVALID_CREDENTIALS = HTTPException(
-    status_code=401, detail="Invalid email or password."
-)
+_INVALID_CREDENTIALS = HTTPException(status_code=401, detail="Invalid email or password.")
 
 
 @router.post("/auth/signup", response_model=AuthResponse)
