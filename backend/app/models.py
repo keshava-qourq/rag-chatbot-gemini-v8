@@ -32,6 +32,7 @@ __all__ = [
     "DocumentChunk",
     "Message",
     "Citation",
+    "RevokedToken",
 ]
 
 # Gemini embeddings (gemini-embedding-001), truncated to this many dimensions,
@@ -170,3 +171,19 @@ class Citation(Base):
     message: Mapped["Message"] = relationship(back_populates="citations")
     document: Mapped["Document"] = relationship(back_populates="citations")
     chunk: Mapped["DocumentChunk | None"] = relationship(back_populates="citations")
+
+
+class RevokedToken(Base):
+    """A blocklist of logged-out JWTs, keyed by their `jti` claim.
+
+    Stateless JWTs can't be invalidated by themselves; logging out inserts the
+    token's jti here, and get_current_user (app.deps) rejects any token whose
+    jti is present, giving logout a real server-side effect (NFR-004). A single
+    small table is sufficient at the tens-to-low-hundreds-of-users scale this
+    system targets (NFR-016) -- no distributed session store needed.
+    """
+
+    __tablename__ = "revoked_tokens"
+
+    jti: Mapped[str] = mapped_column(String(64), primary_key=True)
+    revoked_at: Mapped[datetime] = _created_at()

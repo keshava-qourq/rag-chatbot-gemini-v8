@@ -1,16 +1,22 @@
-"""Password hashing, complexity rules and JWT issuance.
+"""Password hashing, complexity rules and JWT issuance/verification.
 
 NFR-001: passwords are stored only as bcrypt hashes (passlib[bcrypt]).
 NFR-002: minimum password complexity is enforced server-side, independent of
 whatever the frontend also checks.
+
+Tokens carry a `jti` (JWT ID) so logout (US-002/US-003) can revoke a single
+issued token server-side without needing a distributed session store --
+see app.models.RevokedToken and app.deps.get_current_user.
 """
 
 from __future__ import annotations
 
 import re
+import uuid
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
-from jose import jwt
+from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from app.config import JWT_ALGORITHM, JWT_EXPIRE_MINUTES, JWT_SECRET_KEY
@@ -25,6 +31,10 @@ PASSWORD_RULES = (
     f"Password must be at least {PASSWORD_MIN_LENGTH} characters long and include "
     "at least one uppercase letter, one lowercase letter, and one digit."
 )
+
+
+class TokenError(Exception):
+    """Raised by decode_access_token for any invalid, expired or malformed token."""
 
 
 def password_errors(password: str) -> list[str]:
@@ -50,11 +60,27 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 
 def create_access_token(subject: str) -> str:
-    """A signed JWT for ``subject`` (the user id), expiring per JWT_EXPIRE_MINUTES."""
+    """A signed JWT for ``subject`` (the user id), expiring per JWT_EXPIRE_MINUTES.
+
+    Each token gets a unique ``jti`` so it can be individually revoked on logout.
+    """
     now = datetime.now(UTC)
     payload = {
         "sub": subject,
         "iat": now,
         "exp": now + timedelta(minutes=JWT_EXPIRE_MINUTES),
+        "jti": uuid.uuid4().hex,
     }
     return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+
+
+def decode_access_token(token: str) -> dict[str, Any]:
+    """Decode and verify ``token``'s signature and expiry.
+
+    Raises TokenError on any invalid, malformed or expired token. Does not
+    check revocation -- that requires a database lookup, done by app.deps.
+    """
+    try:
+        return jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+    except JWTError as exc:
+        raise TokenError(str(exc)) from exc

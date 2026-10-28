@@ -37,6 +37,18 @@ class SignupRequest(BaseModel):
         return value.lower()
 
 
+class LoginRequest(BaseModel):
+    """POST /auth/login request body: `{ email, password }`."""
+
+    email: str
+    password: str
+
+    @field_validator("email")
+    @classmethod
+    def _normalize_email(cls, value: str) -> str:
+        return value.strip().lower()
+
+
 class UserOut(BaseModel):
     """The `user` object nested in auth responses: `{ id, email }`."""
 
@@ -45,7 +57,13 @@ class UserOut(BaseModel):
 
 
 class AuthResponse(BaseModel):
-    """What POST /auth/signup (and /auth/login) returns: `{ access_token, user }`."""
+    """What POST /auth/signup and POST /auth/login return: `{ access_token, user }`."""
 
     access_token: str
     user: UserOut
+
+
+class LogoutResponse(BaseModel):
+    """What POST /auth/logout returns: `{ status: 'ok' }`."""
+
+    status: str = "ok"
