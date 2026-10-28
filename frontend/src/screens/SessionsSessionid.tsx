@@ -15,7 +15,10 @@ const { Button, Input, Label, Table, THead, TBody, TR, TH, TD, Empty } = UI;
 // Sessions.tsx right before it navigates here.
 const ACTIVE_SESSION_STORAGE_KEY = "currentSessionId";
 
-const MAX_DOCS = 5;
+// US-016-2: mirrors the backend's real per-session cap (MAX_DOCUMENTS_PER_SESSION
+// in backend/app/config.py). This is a fast local guard only, kept in sync with
+// the backend value so it never blocks an upload the backend would still accept.
+const MAX_DOCS = 20;
 const MAX_SIZE_BYTES = 20 * 1024 * 1024;
 
 // US-014-1: while any document is still 'processing', keep polling the

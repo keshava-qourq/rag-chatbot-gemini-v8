@@ -16,7 +16,6 @@ import uuid
 
 import redis
 from rq import Queue
-from rq.exceptions import DuplicateJobError
 from sqlalchemy.orm import Session
 from tenacity import retry, stop_after_attempt, wait_exponential
 
@@ -203,10 +202,15 @@ def enqueue_document_processing(document_id: uuid.UUID) -> None:
 
     Keyed by a deterministic job id derived from the document id, so calling
     this twice for the same document never double-queues it (jobs must be
-    safe to run twice).
+    safe to run twice): if a job with that id already exists (queued,
+    running, finished or failed) this is a no-op rather than an error.
+
+    Calls process_document with the single positional argument its signature
+    accepts -- no keyword arguments -- so a real worker executing this job
+    never crashes with a TypeError.
     """
     job_id = f"process-document-{document_id}"
-    try:
-        _queue().enqueue(process_document, str(document_id), job_id=job_id, unique=True)
-    except DuplicateJobError:
-        pass
+    queue = _queue()
+    if queue.fetch_job(job_id) is not None:
+        return
+    queue.enqueue(process_document, str(document_id), job_id=job_id)

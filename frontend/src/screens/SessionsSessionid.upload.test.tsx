@@ -6,7 +6,7 @@ import { apiFetch, ApiError } from "@/lib/api";
 
 // US-012-1: Upload PDF form wired to the real POST /sessions/{id}/documents
 // endpoint (AC-031, AC-032). Client-side pre-checks (PDF type, 20MB size,
-// 5-doc cap) remain a fast local guard (AC-013..016), but accepted uploads
+// 20-doc cap) remain a fast local guard (AC-013..016), but accepted uploads
 // now go through apiFetch as multipart/form-data and the row that appears in
 // the table comes straight from the backend response.
 //
@@ -14,6 +14,11 @@ import { apiFetch, ApiError } from "@/lib/api";
 // over-cap) or the request fails outright (network/auth), the form must
 // surface the real ApiError.detail verbatim, or a generic message only when
 // no backend detail is present -- never a fake success.
+//
+// US-016-2: the local guard's cap (MAX_DOCS in SessionsSessionid.tsx) mirrors
+// the backend's real per-session cap, MAX_DOCUMENTS_PER_SESSION = 20
+// (backend/app/config.py), so uploads under that real cap are never blocked
+// client-side.
 vi.mock("@/lib/api", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
   return { ...actual, apiFetch: vi.fn() };
@@ -201,7 +206,7 @@ describe("SessionsSessionid PDF upload", () => {
     expect(screen.getByText("at-limit.pdf")).toBeInTheDocument();
   });
 
-  it("[AC-016] once the session holds the maximum documents, the upload control is disabled and further selection is rejected locally", async () => {
+  it("[AC-016] once the session holds the maximum documents (the real backend cap of 20), the upload control is disabled and further selection is rejected locally", async () => {
     let counter = 0;
     mockedApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
       if (path === "/sessions/sess-1/documents" && init?.method === "POST") {
@@ -217,7 +222,8 @@ describe("SessionsSessionid PDF upload", () => {
     render(<Screen />);
     await waitFor(() => expect(mockedApiFetch).toHaveBeenCalled());
 
-    for (const name of ["first.pdf", "second.pdf", "third.pdf", "fourth.pdf", "fifth.pdf"]) {
+    const names = Array.from({ length: 20 }, (_, i) => `doc-${i + 1}.pdf`);
+    for (const name of names) {
       selectFile(pdfFile(name, 500_000));
       await waitFor(() => expect(screen.getByText(name)).toBeInTheDocument());
     }
@@ -226,14 +232,43 @@ describe("SessionsSessionid PDF upload", () => {
     expect(input).toBeDisabled();
     expect(screen.getByText(/Document limit reached for this session/i)).toBeInTheDocument();
 
-    // Attempting to select a sixth file anyway must not attach it or call the API.
+    // Attempting to select a 21st file anyway must not attach it or call the API.
     mockedApiFetch.mockClear();
-    selectFile(pdfFile("sixth.pdf", 500_000));
+    selectFile(pdfFile("twenty-first.pdf", 500_000));
     await waitFor(() =>
-      expect(screen.getByText(/already has 5 of 5 documents attached/i)).toBeInTheDocument(),
+      expect(screen.getByText(/already has 20 of 20 documents attached/i)).toBeInTheDocument(),
     );
-    expect(screen.queryByText("sixth.pdf")).not.toBeInTheDocument();
+    expect(screen.queryByText("twenty-first.pdf")).not.toBeInTheDocument();
     expect(mockedApiFetch).not.toHaveBeenCalled();
+  }, 20000);
+
+  it("[AC-016] uploading an additional document while under the real cap of 20 is never blocked client-side", async () => {
+    mockedApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === "/sessions/sess-1/documents" && init?.method === "POST") {
+        return backendDoc({ id: "doc-under-cap", filename: "under-cap.pdf" });
+      }
+      // Simulate a session that already holds 19 of the real 20-cap.
+      if (path === "/sessions/sess-1/documents") {
+        return Array.from({ length: 19 }, (_, i) =>
+          backendDoc({ id: `existing-${i}`, filename: `existing-${i}.pdf`, status: "ready" }),
+        );
+      }
+      if (path === "/sessions/sess-1/messages") return [];
+      throw new Error(`Unexpected apiFetch call: ${path}`);
+    });
+
+    render(<Screen />);
+    await waitFor(() => expect(screen.getByText("existing-0.pdf")).toBeInTheDocument());
+
+    const input = document.getElementById("pdf-file-input") as HTMLInputElement;
+    expect(input).not.toBeDisabled();
+
+    selectFile(pdfFile("under-cap.pdf", 500_000));
+
+    await waitFor(() =>
+      expect(screen.getByText(/was uploaded and is being processed/i)).toBeInTheDocument(),
+    );
+    expect(screen.getByText("under-cap.pdf")).toBeInTheDocument();
   });
 
   it("surfaces a backend upload failure instead of adding a fake document row", async () => {
@@ -315,7 +350,7 @@ describe("SessionsSessionid PDF upload", () => {
         throw new ApiError(
           "POST /sessions/sess-1/documents failed: 409",
           409,
-          "This session already has the maximum of 5 documents.",
+          "This session already has the maximum of 20 documents.",
         );
       }
       if (path === "/sessions/sess-1/documents") return [];
@@ -330,7 +365,7 @@ describe("SessionsSessionid PDF upload", () => {
 
     await waitFor(() =>
       expect(
-        screen.getByText("This session already has the maximum of 5 documents."),
+        screen.getByText("This session already has the maximum of 20 documents."),
       ).toBeInTheDocument(),
     );
     expect(screen.queryByText("capped.pdf")).not.toBeInTheDocument();
