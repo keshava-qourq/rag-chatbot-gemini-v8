@@ -11,11 +11,6 @@ import { clearToken, getToken } from "@/lib/auth";
 
 export const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
-// Kept for now per this ticket's constraints: no longer used to authenticate
-// requests (apiFetch now attaches the per-user token from lib/auth instead),
-// but other code may still import it.
-export const API_SECRET_KEY: string = import.meta.env.VITE_API_SECRET_KEY ?? "";
-
 export class ApiError extends Error {
   status: number;
   detail?: string;
