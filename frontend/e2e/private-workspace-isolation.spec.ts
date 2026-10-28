@@ -41,11 +41,7 @@ async function createSession(api: APIRequestContext, token: string, name: string
   return (await response.json()).id as string;
 }
 
-async function injectBrowserState(
-  page: Page,
-  token: string,
-  sessionId?: string,
-): Promise<void> {
+async function injectBrowserState(page: Page, token: string, sessionId?: string): Promise<void> {
   await page.addInitScript(
     ([tokenKey, tokenValue, sessionKey, sessionValue]) => {
       window.localStorage.setItem(tokenKey, tokenValue);
