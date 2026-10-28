@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 Build a rag chatbot where user can upload there own documents and ask queries about them use gemini-2.5-flash for answers and gemini-embedding-001 for embeddings and have chat history and sessions
 
-**Documentation version:** v26
+**Documentation version:** v27
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -15,7 +15,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 |---|---|
 | [Requirements](requirements/README.md) | v2 approved |
 | [Architecture](architecture/README.md) | 18 entries |
-| [Development](development/README.md) | 13 entries |
+| [Development](development/README.md) | 16 entries |
 | [Testing](testing/README.md) | 1 entry |
 | [Deployment](deployment/README.md) | 1 entry |
 | [Maintenance](maintenance/README.md) | 1 entry |
@@ -31,7 +31,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 | [Runbook](deployment/runbook.md) | deployed |
 | [Release notes](deployment/release-notes.md) | 11 releases |
 | [Traceability matrix](traceability-matrix.md) | 16 requirements |
-| [Changelog](CHANGELOG.md) | 26 versions |
+| [Changelog](CHANGELOG.md) | 27 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -56,19 +56,19 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 
 ### Development
 
-- Plan input does not explicitly state which backlog items (US-xxx) were assigned to this sprint; mapping to EPIC-001/US-001-US-004 is a plausible inference only, not a stated fact.
-- No development run data ties any delivered ticket to this sprint.
-- Plan input does not explicitly state which backlog items were assigned to this sprint.
-- Only US-014 and US-015 (from this likely range) have recorded development delivery; the rest have no dev status recorded.
-- No development run record exists for US-001, US-002, US-003, or US-004 despite the dev run being marked completed; delivery status for this epic's stories is unconfirmed.
-- No development run record exists for US-005 or US-006 despite the dev run being marked completed; delivery status for this epic's stories is unconfirmed.
-- No development run record exists for US-007 or US-008 (or their tasks) despite the dev run being marked completed; delivery status for this epic's stories is unconfirmed.
-- No development run record exists for US-009 or US-010 (or US-009's tasks) despite the dev run being marked completed; delivery status for this epic's stories is unconfirmed.
-- No development run record exists for US-011 despite the dev run being marked completed; delivery status for this epic's story is unconfirmed.
-- No development run record exists for US-012, US-013, or US-016 despite the overall dev run being marked 'completed' -- this is a discrepancy between claimed phase status and recorded ticket-level evidence and should be reconciled.
-- US-014 and US-015 share the identical commit hash, which may indicate they were delivered together in one commit/PR; this is noted but not confirmed as intentional or erroneous by the input.
-- Discrepancy: run status says 'completed' but 14 of 16 planned stories (US-001-US-013, US-016) have no delivery ticket in the input -- unclear whether they were delivered without being logged, descoped, or still pending. Needs reconciliation with the planning/dev team.
-- No commit, PR, or code artifact references were provided for US-001 through US-013 or US-016.
+- No explicit mapping provided between backlog items and the sprint in which each was actually completed.
+- No explicit list of which backlog items (e.g. US-001..US-005) were assigned to or completed in this sprint was given.
+- No explicit list of which backlog items were assigned to or completed in this sprint was given.
+- No per-ticket completion/delivery status given for US-001 through US-004; only the overall dev run is marked 'completed'.
+- No per-ticket completion/delivery status given for US-005 or US-006.
+- Task-level (T1-T4) completion status not reported individually; only the aggregate dev run status of 'completed' is available.
+- Task-level completion status not reported individually for US-009's sub-tasks or for US-010.
+- No per-ticket completion/delivery status given for US-011.
+- Epic grouping not explicit in input (inferred from functional relationship to US-007).
+- No individual completion/delivery status reported for this ticket.
+- Epic grouping not explicit in input (inferred).
+- This is a deployment/runtime configuration concern; no confirmation of actual deployed execution is available in this development-phase input (belongs to deployment phase evidence).
+- Discrepancy: the run is marked 'completed' at the aggregate level, but no explicit status or commit evidence was provided for US-001 through US-015 individually -- their actual implementation/delivery state cannot be confirmed from this input.
 
 ### Testing
 
