@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 Build a rag chatbot where user can upload there own documents and ask queries about them use gemini-2.5-flash for answers and gemini-embedding-001 for embeddings and have chat history and sessions
 
-**Documentation version:** v13
+**Documentation version:** v14
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -15,7 +15,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 |---|---|
 | [Requirements](requirements/README.md) | v1 approved |
 | [Architecture](architecture/README.md) | 18 entries |
-| [Development](development/README.md) | 7 entries |
+| [Development](development/README.md) | 10 entries |
 | [Testing](testing/README.md) | 1 entry |
 | [Deployment](deployment/README.md) | 1 entry |
 | [Maintenance](maintenance/README.md) | 1 entry |
@@ -31,7 +31,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 | [Runbook](deployment/runbook.md) | deployed |
 | [Release notes](deployment/release-notes.md) | 5 releases |
 | [Traceability matrix](traceability-matrix.md) | 11 requirements |
-| [Changelog](CHANGELOG.md) | 13 versions |
+| [Changelog](CHANGELOG.md) | 14 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -51,13 +51,19 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 
 ### Development
 
-- Plan input does not state which backlog items/tasks are assigned to which sprint -- only per-sprint goals and capacities are given, so sprint-to-item mapping below is inferred thematically, not confirmed.
-- Epics themselves carry no story points or assigned role in the input.
-- No explicit item-to-sprint assignment was provided; association above is inferred from the sprint goal text only.
-- No per-sub-task (US-008-T1..T4) completion confirmation was given, only the parent ticket's delivered status and commit.
-- No test or review evidence was included in this phase's input for this ticket.
-- Discrepancy: phase-level run status says 'completed' but 10 of 11 planned stories have no ticket-level delivery record in the input -- flagging for confirmation rather than assuming they were delivered or skipped.
-- No commit references, review notes, or task-level status exist for these items in this phase's input.
+- Input lists sprints and backlog items separately with no explicit field mapping which item belongs to which sprint; mapping used in epic-level entries below is inferred from goal text and epic grouping, not stated directly.
+- No development-run ticket status reported for US-001, US-002, US-003, or US-004 despite the dev run being marked 'completed' -- unclear whether these were implemented.
+- No development-run ticket status reported for US-005 or US-006 despite the dev run being marked 'completed' -- unclear whether these were implemented.
+- No development-run ticket status reported for US-007, US-008, or any of their sub-tasks (T1-T4 each) despite the dev run being marked 'completed' -- unclear whether the upload flow or embedding pipeline were implemented.
+- US-010 (citations) was recorded in the dev run as skipped with no commit -- reason not stated in input.
+- No individual task-level (T1-T4) status reported for US-009 beyond the overall story being marked delivered.
+- US-011 (persistent chat history) was recorded in the dev run as skipped with no commit -- reason not stated in input. This directly affects the project's stated goal of 'having chat history and sessions'.
+- Discrepancy: the run is marked 'completed' but 8 of 11 planned stories (US-001-US-008) have no reported ticket status -- unclear if they were built, not attempted, or simply omitted from this input.
+- No task-level (Txx) ticket statuses were reported for any story.
+- Only story-level delivery is confirmed; individual sub-task (T1-T4) completion was not separately reported.
+- Reason for skipping not provided in input.
+- Citation display functionality should not be assumed to exist in the built application.
+- Persistent chat history should not be assumed to exist in the built application, despite being a core part of the project description.
 
 ### Testing
 

@@ -9,8 +9,6 @@
 
 **Delivered:**
 - US-008: Parse, chunk, and embed uploaded PDFs
-- US-009: Ask a question scoped to the active session's documents
-- US-010: View source citations for each answer
 
 ## 24ac353600c1 — 2026-10-28
 
