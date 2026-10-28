@@ -3,6 +3,14 @@
 > Maintained by QuorQ AI SDLC. Text between `sdlc:auto` markers is regenerated; anything outside them is yours and is kept.
 
 <!-- sdlc:auto:start releases -->
+## 481093554d43 — 2026-10-28
+
+**Commit:** `4810935`
+
+**Delivered:**
+- US-012: Wire Upload PDF form to the real upload endpoint
+- US-013: Show real backend errors for rejected uploads
+
 ## ccd2eddd464c — 2026-10-28
 
 **Commit:** `ccd2edd`

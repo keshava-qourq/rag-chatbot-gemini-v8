@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 Build a rag chatbot where user can upload there own documents and ask queries about them use gemini-2.5-flash for answers and gemini-embedding-001 for embeddings and have chat history and sessions
 
-**Documentation version:** v23
+**Documentation version:** v24
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -29,9 +29,9 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 | [Tests](testing/test-cases.md) | 0 tests |
 | [Deployment guide](deployment/deployment-guide.md) | deployed |
 | [Runbook](deployment/runbook.md) | deployed |
-| [Release notes](deployment/release-notes.md) | 9 releases |
+| [Release notes](deployment/release-notes.md) | 10 releases |
 | [Traceability matrix](traceability-matrix.md) | 16 requirements |
-| [Changelog](CHANGELOG.md) | 23 versions |
+| [Changelog](CHANGELOG.md) | 24 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -74,12 +74,12 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 
 ### Deployment
 
-- No deployment date/timestamp recorded.
-- No indication of who or what triggered/approved this deployment.
-- No release notes or changelog describing which requirements (US-001 through US-011) or tickets are included in this version.
-- No environment designation (e.g. staging vs production) stated.
-- No rollback or incident-response plan documented.
-- No confirmation that this deployment was preceded by passing tests (testing phase linkage absent).
+- No deployment date recorded.
+- No indication of which requirements/user stories (e.g. US-001..US-016) are included in this release version.
+- No record of who approved or triggered this deployment.
+- No rollback plan, release notes, or changelog provided.
+- No confirmation of environment type (staging vs. production) beyond the generic 'live' status.
+- Backend URL uses an IP-based sslip.io domain with no TLS/cert details noted.
 
 ### Maintenance
 
