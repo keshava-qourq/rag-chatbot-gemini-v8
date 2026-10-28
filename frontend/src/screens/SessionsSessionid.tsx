@@ -18,6 +18,11 @@ const ACTIVE_SESSION_STORAGE_KEY = "currentSessionId";
 const MAX_DOCS = 5;
 const MAX_SIZE_BYTES = 20 * 1024 * 1024;
 
+// US-014-1: while any document is still 'processing', keep polling the
+// documents list at this interval so the status (and, on failure, the error
+// message) updates in place without a full page reload (AC-035..037).
+const DOCUMENT_POLL_INTERVAL_MS = 4000;
+
 const glassStyle = {
   borderRadius: brand.radius,
   background: "rgba(255,255,255,0.07)",
@@ -162,28 +167,58 @@ export default function Screen() {
     resetFileInput();
   }
 
-  const loadDocuments = React.useCallback(async () => {
-    if (!sessionId) {
-      setDocumentsLoading(false);
-      return;
-    }
-    setDocumentsError(null);
-    try {
-      // AC-012: only this session's real documents from the API -- no
-      // seeded/sample array, and nothing carried over from another session.
-      const docs = await apiFetch(`/sessions/${sessionId}/documents`, { method: "GET" });
-      setDocuments(docs ?? []);
-    } catch {
-      setDocumentsError("Couldn't load documents. Try refreshing the page.");
-    } finally {
-      setDocumentsLoading(false);
-    }
-  }, [sessionId]);
+  // `showLoading` distinguishes the initial, user-visible fetch (full
+  // loading/error UI) from a background poll refresh (AC-035..037): a poll
+  // that fails transiently should just retry next cycle rather than
+  // replacing an already-rendered Documents list with an error banner, and
+  // it must never touch the loading spinner, conversation history, or
+  // upload form state.
+  const loadDocuments = React.useCallback(
+    async ({ showLoading = false } = {}) => {
+      if (!sessionId) {
+        setDocumentsLoading(false);
+        return;
+      }
+      if (showLoading) {
+        setDocumentsError(null);
+      }
+      try {
+        // AC-012/AC-035: only this session's real documents from the API --
+        // no seeded/sample array, and nothing carried over from another
+        // session. Reused as-is for both the initial load and each poll.
+        const docs = await apiFetch(`/sessions/${sessionId}/documents`, { method: "GET" });
+        setDocuments(docs ?? []);
+        if (showLoading) setDocumentsError(null);
+      } catch {
+        if (showLoading) {
+          setDocumentsError("Couldn't load documents. Try refreshing the page.");
+        }
+      } finally {
+        if (showLoading) setDocumentsLoading(false);
+      }
+    },
+    [sessionId],
+  );
 
   React.useEffect(() => {
     setDocumentsLoading(true);
-    loadDocuments();
+    loadDocuments({ showLoading: true });
   }, [loadDocuments]);
+
+  // AC-035/036/037: while at least one document is 'processing', keep
+  // polling GET /sessions/{id}/documents so its status flips to 'ready' or
+  // 'failed' (with error_message) in place, without a full page reload.
+  // Polling stops as soon as none are left processing, and the timer is
+  // always cleared -- on unmount and whenever this effect re-runs -- so no
+  // timer leaks past the component's lifetime.
+  React.useEffect(() => {
+    const hasProcessing = documents.some((doc) => doc.status === "processing");
+    if (!hasProcessing) return undefined;
+    const timerId = setTimeout(() => {
+      loadDocuments();
+    }, DOCUMENT_POLL_INTERVAL_MS);
+    return () => clearTimeout(timerId);
+  }, [documents, loadDocuments]);
 
   const loadHistory = React.useCallback(async () => {
     if (!sessionId) {
