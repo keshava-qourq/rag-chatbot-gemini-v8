@@ -1,6 +1,7 @@
 import { NavLink, Navigate, Outlet, Route, Routes } from "react-router-dom";
 
 import { Icons } from "@/lib/icons";
+import { getToken } from "@/lib/auth";
 import Signup from "@/screens/Signup";
 import Login from "@/screens/Login";
 import Sessions from "@/screens/Sessions";
@@ -11,6 +12,17 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     "flex items-center gap-2 rounded-[var(--brand-radius)] px-3 py-2 text-sm font-medium transition-colors",
     isActive ? "bg-[var(--brand-hover)] text-[var(--brand-fg)]" : "text-[var(--brand-fg-muted)]",
   ].join(" ");
+
+// Protected routes (/sessions, /sessions-sessionid) need a stored token or they
+// redirect to /login (AC-006). An expired/invalidated token is instead caught
+// per-request by apiFetch's 401 handling, which clears the token and redirects.
+function RequireAuth() {
+  const token = getToken();
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  return <Outlet />;
+}
 
 // The app's menu, drawn around every screen except the ones routed outside it below.
 function AppShellLayout() {
@@ -48,9 +60,11 @@ function AppShellLayout() {
 export default function App() {
   return (
     <Routes>
-      <Route element={<AppShellLayout />}>
-        <Route path="/sessions" element={<Sessions />} />
-        <Route path="/sessions-sessionid" element={<SessionsSessionid />} />
+      <Route element={<RequireAuth />}>
+        <Route element={<AppShellLayout />}>
+          <Route path="/sessions" element={<Sessions />} />
+          <Route path="/sessions-sessionid" element={<SessionsSessionid />} />
+        </Route>
       </Route>
       <Route path="/signup" element={<Signup />} />
       <Route path="/login" element={<Login />} />

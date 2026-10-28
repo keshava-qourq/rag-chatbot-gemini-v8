@@ -1,45 +1,34 @@
 // @ts-nocheck -- generated from the approved design under its JS runtime contract; not hand-written TypeScript.
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from "react";
 
 import * as UI from "@/lib/ui";
 import { Icons } from "@/lib/icons";
 import { brand } from "@/lib/brand";
 import { useNavigate } from "@/lib/navigate";
+import { apiFetch } from "@/lib/api";
+import { setToken } from "@/lib/auth";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { Input, Label } = UI;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const { Check } = Icons;
 
 export default function Screen() {
   const navigate = useNavigate();
-  const demoAccount = { email: "emily.carter@brightfield.io", password: "Harbor42!" };
 
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [touched, setTouched] = React.useState({ email: false, password: false });
   const [status, setStatus] = React.useState("idle"); // idle | loading | error
   const [errorMessage, setErrorMessage] = React.useState("");
-  const timeoutRef = React.useRef(null);
-
-  React.useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, []);
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const emailError = touched.email && email.trim().length === 0
-    ? "Enter your email address."
-    : touched.email && !emailValid
-      ? "Enter a valid email address."
-      : "";
-  const passwordError = touched.password && password.length === 0
-    ? "Enter your password."
-    : "";
+  const emailError =
+    touched.email && email.trim().length === 0
+      ? "Enter your email address."
+      : touched.email && !emailValid
+        ? "Enter a valid email address."
+        : "";
+  const passwordError = touched.password && password.length === 0 ? "Enter your password." : "";
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setTouched({ email: true, password: true });
     setErrorMessage("");
@@ -49,15 +38,20 @@ export default function Screen() {
     }
 
     setStatus("loading");
-    timeoutRef.current = setTimeout(() => {
-      if (email.trim().toLowerCase() === demoAccount.email && password === demoAccount.password) {
-        setStatus("idle");
-        navigate("sessions");
-      } else {
-        setStatus("error");
-        setErrorMessage("We couldn't verify that email and password. Check your details and try again.");
-      }
-    }, 650);
+    try {
+      const response = await apiFetch("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+      setToken(response.access_token);
+      setStatus("idle");
+      navigate("sessions");
+    } catch (err) {
+      setStatus("error");
+      // AC/NFR-003: show the server's generic invalid-credentials message
+      // verbatim -- no local "does this email exist" check of our own.
+      setErrorMessage(err?.detail || "Invalid email or password.");
+    }
   }
 
   const inputBase = {
@@ -115,7 +109,10 @@ export default function Screen() {
           }}
         >
           <div>
-            <h2 className="text-xl font-semibold mb-1" style={{ fontFamily: brand.fontHeading, color: "#f1f5fb" }}>
+            <h2
+              className="text-xl font-semibold mb-1"
+              style={{ fontFamily: brand.fontHeading, color: "#f1f5fb" }}
+            >
               Log in to your workspace
             </h2>
             <p className="text-sm" style={{ color: brand.neutralColor }}>
@@ -134,13 +131,23 @@ export default function Screen() {
                 borderRadius: brand.radius,
               }}
             >
-              <Icons.AlertCircle aria-hidden="true" className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: "#f87171" }} />
-              <p className="text-sm" style={{ color: "#fecaca" }}>{errorMessage}</p>
+              <Icons.AlertCircle
+                aria-hidden="true"
+                className="w-5 h-5 mt-0.5 flex-shrink-0"
+                style={{ color: "#f87171" }}
+              />
+              <p className="text-sm" style={{ color: "#fecaca" }}>
+                {errorMessage}
+              </p>
             </div>
           )}
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="login-email" className="text-sm font-medium" style={{ color: "#e7edf7" }}>
+            <Label
+              htmlFor="login-email"
+              className="text-sm font-medium"
+              style={{ color: "#e7edf7" }}
+            >
               Email
             </Label>
             <Input
@@ -165,7 +172,11 @@ export default function Screen() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="login-password" className="text-sm font-medium" style={{ color: "#e7edf7" }}>
+            <Label
+              htmlFor="login-password"
+              className="text-sm font-medium"
+              style={{ color: "#e7edf7" }}
+            >
               Password
             </Label>
             <Input
@@ -188,10 +199,6 @@ export default function Screen() {
               </p>
             )}
           </div>
-
-          <p className="text-xs" style={{ color: brand.neutralColor }}>
-            Demo account &mdash; email <span style={{ color: "#dbe6f5" }}>emily.carter@brightfield.io</span>, password <span style={{ color: "#dbe6f5" }}>Harbor42!</span>
-          </p>
         </form>
 
         {/* Row 3 */}
@@ -232,7 +239,11 @@ export default function Screen() {
             type="button"
             onClick={() => navigate("signup")}
             className="text-sm font-medium underline-offset-4 hover:underline focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-md px-1 py-2"
-            style={{ color: brand.primaryColor, "--tw-ring-color": brand.accentColor, "--tw-ring-offset-color": brand.backgroundColor }}
+            style={{
+              color: brand.primaryColor,
+              "--tw-ring-color": brand.accentColor,
+              "--tw-ring-offset-color": brand.backgroundColor,
+            }}
           >
             Need an account? Sign Up
           </button>
