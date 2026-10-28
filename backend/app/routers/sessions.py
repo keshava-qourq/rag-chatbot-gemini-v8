@@ -8,7 +8,7 @@ message routes remain stubs; that is a later sprint's work.
 
 import uuid
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -55,8 +55,6 @@ async def get_session(
     try:
         sid = uuid.UUID(session_id)
     except ValueError:
-        from fastapi import HTTPException
-
         raise HTTPException(status_code=404, detail="Not found.") from None
     return get_owned_or_404(db, ChatSession, sid, current_user.id)
 

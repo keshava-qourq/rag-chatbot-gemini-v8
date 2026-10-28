@@ -4,11 +4,12 @@ One pair per entity in the approved data model, plus the placeholder every
 generated route returns until it has been implemented.
 """
 
+import re
 from datetime import datetime
 
 from pydantic import BaseModel, field_validator
 
-_EMAIL_RE = __import__("re").compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 class StubResponse(BaseModel):

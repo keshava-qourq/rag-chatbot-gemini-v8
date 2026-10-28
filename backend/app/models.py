@@ -44,14 +44,12 @@ def _pk() -> Mapped[uuid.UUID]:
     return mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
 
-def _fk(
-    target: str, *, ondelete: str, nullable: bool = False, indexed: bool = True
-) -> Mapped[uuid.UUID]:
+def _fk(target: str, *, ondelete: str, nullable: bool = False) -> Mapped[uuid.UUID]:
     return mapped_column(
         Uuid(as_uuid=True),
         ForeignKey(target, ondelete=ondelete),
         nullable=nullable,
-        index=indexed,
+        index=True,
     )
 
 
