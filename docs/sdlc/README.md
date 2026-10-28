@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 Build a rag chatbot where user can upload there own documents and ask queries about them use gemini-2.5-flash for answers and gemini-embedding-001 for embeddings and have chat history and sessions
 
-**Documentation version:** v9
+**Documentation version:** v10
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -29,9 +29,9 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 | [Tests](testing/test-cases.md) | 0 tests |
 | [Deployment guide](deployment/deployment-guide.md) | deployed |
 | [Runbook](deployment/runbook.md) | deployed |
-| [Release notes](deployment/release-notes.md) | 3 releases |
+| [Release notes](deployment/release-notes.md) | 4 releases |
 | [Traceability matrix](traceability-matrix.md) | 11 requirements |
-| [Changelog](CHANGELOG.md) | 9 versions |
+| [Changelog](CHANGELOG.md) | 10 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -69,11 +69,12 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 
 ### Deployment
 
-- Deployment date/timestamp not provided.
-- No record of who approved or triggered this deployment.
-- No mapping given between this release and specific requirement IDs (US-001 through US-011), so related requirements cannot be confirmed as live.
-- No rollback plan, infrastructure details, or environment configuration (e.g. staging vs production) documented.
-- No post-deployment verification or smoke-test results recorded.
+- No deployment date/timestamp recorded.
+- No indication of who approved or triggered this deployment.
+- No release notes or changelog linking this version to specific requirements (US-001..US-011) or development tickets.
+- No environment details (e.g., staging vs production, region, infra config) provided.
+- No rollback plan or prior version reference provided to assess what changed in this release.
+- No post-deployment verification/test results (smoke tests, health checks) recorded.
 
 ### Maintenance
 
