@@ -22,8 +22,8 @@ from __future__ import annotations
 
 import io
 import os
-import sys
 import subprocess
+import sys
 import uuid
 from pathlib import Path
 
@@ -228,9 +228,7 @@ def test_ac041_valid_pdf_is_processed_by_a_real_worker_and_becomes_ready_with_us
             assert document.status == "ready"
             assert document.error_message is None
 
-            chunks = (
-                db.query(DocumentChunk).filter(DocumentChunk.document_id == document.id).all()
-            )
+            chunks = db.query(DocumentChunk).filter(DocumentChunk.document_id == document.id).all()
             assert len(chunks) >= 1
             assert chunks[0].content.strip() != ""
             assert chunks[0].page_number == 1
@@ -253,9 +251,7 @@ def test_ac041_valid_pdf_is_processed_by_a_real_worker_and_becomes_ready_with_us
 
         class _Models:
             def embed_content(self, *, model, contents, config=None):
-                return SimpleNamespace(
-                    embeddings=[SimpleNamespace(values=[1.0] + [0.0] * 767)]
-                )
+                return SimpleNamespace(embeddings=[SimpleNamespace(values=[1.0] + [0.0] * 767)])
 
             def generate_content(self, *, model, contents):
                 assert "Refunds within 30 days" in contents
@@ -292,9 +288,7 @@ def test_ac042_corrupted_pdf_and_scanned_pdf_both_fail_with_distinguishing_messa
     try:
         session_id = _create_session(token, "Real worker failure session")
 
-        corrupted_upload = _upload(
-            token, session_id, "corrupted.pdf", _corrupted_pdf_bytes()
-        )
+        corrupted_upload = _upload(token, session_id, "corrupted.pdf", _corrupted_pdf_bytes())
         scanned_upload = _upload(token, session_id, "scanned.pdf", _scanned_pdf_bytes())
         assert corrupted_upload.status_code == 200
         assert scanned_upload.status_code == 200
@@ -330,9 +324,7 @@ def test_ac042_corrupted_pdf_and_scanned_pdf_both_fail_with_distinguishing_messa
                 == 0
             )
             assert (
-                db.query(DocumentChunk)
-                .filter(DocumentChunk.document_id == scanned_doc.id)
-                .count()
+                db.query(DocumentChunk).filter(DocumentChunk.document_id == scanned_doc.id).count()
                 == 0
             )
         finally:
