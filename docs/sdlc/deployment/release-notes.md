@@ -3,6 +3,15 @@
 > Maintained by QuorQ AI SDLC. Text between `sdlc:auto` markers is regenerated; anything outside them is yours and is kept.
 
 <!-- sdlc:auto:start releases -->
+## 7d484e0112f6 — 2026-10-28
+
+**Commit:** `7d484e0`
+
+**Delivered:**
+- US-009: Ask a question scoped to the active session's documents
+- US-010: View source citations for each answer
+- US-011: Retain and view full session chat history
+
 ## 53468574960e — 2026-10-28
 
 **Commit:** `5346857`

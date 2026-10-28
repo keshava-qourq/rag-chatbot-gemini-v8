@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 Build a rag chatbot where user can upload there own documents and ask queries about them use gemini-2.5-flash for answers and gemini-embedding-001 for embeddings and have chat history and sessions
 
-**Documentation version:** v16
+**Documentation version:** v17
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -29,9 +29,9 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 | [Tests](testing/test-cases.md) | 0 tests |
 | [Deployment guide](deployment/deployment-guide.md) | deployed |
 | [Runbook](deployment/runbook.md) | deployed |
-| [Release notes](deployment/release-notes.md) | 6 releases |
+| [Release notes](deployment/release-notes.md) | 7 releases |
 | [Traceability matrix](traceability-matrix.md) | 11 requirements |
-| [Changelog](CHANGELOG.md) | 16 versions |
+| [Changelog](CHANGELOG.md) | 17 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -66,13 +66,11 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 
 ### Deployment
 
-- No deployment date/timestamp provided.
+- No deployment date/timestamp given.
 - No record of who approved or triggered this deployment.
-- No information on deployment method (CI/CD pipeline, manual, containerized, etc.).
-- No rollback or incident plan documented.
-- No post-deployment validation or smoke test results recorded.
-- No mapping given between this deployment and which requirements/features (US-001 through US-011) are actually live in this version -- related_ids assumed as full set but not confirmed by input.
-- No environment variables, infrastructure, or hosting provider details (e.g. database, vector store hosting) documented.
+- No infrastructure, environment variables, or configuration details provided.
+- No monitoring, logging, or rollback plan documented.
+- No mapping from this deployment to which requirements (US-001..US-011) were actually included/verified in this release -- related_ids listed speculatively since all are presumably part of the product but not confirmed scoped to this version.
 
 ### Maintenance
 
