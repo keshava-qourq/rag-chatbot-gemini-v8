@@ -1,7 +1,8 @@
 """Pydantic request and response models.
 
-One pair per entity in the approved data model, plus the placeholder every
-generated route returns until it has been implemented.
+One pair per entity in the approved data model. Every route the API spec
+declares is fully implemented (see app.routers), so there is no generated
+placeholder schema left here -- each response model below backs a real route.
 """
 
 import re
@@ -16,19 +17,6 @@ _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 def _as_str(value: object) -> str:
     """Stringify a UUID id field before validation; pass other values through."""
     return str(value) if isinstance(value, uuid.UUID) else value
-
-
-class StubResponse(BaseModel):
-    """What a generated route returns until someone implements it.
-
-    A stub that returns a typed body rather than raising keeps the service
-    startable and its OpenAPI document complete, so the frontend can be built
-    against the agreed shape while the handlers are still being written.
-    """
-
-    endpoint: str
-    status: str = "not_implemented"
-    detail: str = "Scaffolded from the approved API spec; no behaviour yet."
 
 
 class SignupRequest(BaseModel):

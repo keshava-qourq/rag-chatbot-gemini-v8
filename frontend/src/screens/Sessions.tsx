@@ -13,12 +13,20 @@ const { Button, Table, THead, TBody, TR, TH, TD, Empty } = UI;
 
 // The session detail screen's route (unchanged by this ticket) carries no
 // :sessionId segment, so the id it needs to call /sessions/{id}/messages is
-// handed off here, the only place that knows which row was opened.
+// handed off here, the only place that knows which row was opened. The name
+// travels alongside it so the detail screen can show the real session name
+// in its heading without a second round trip to GET /sessions/{id}.
 const ACTIVE_SESSION_STORAGE_KEY = "currentSessionId";
+const ACTIVE_SESSION_NAME_STORAGE_KEY = "currentSessionName";
 
-function setActiveSessionId(id) {
+function setActiveSession(id, name) {
   try {
     sessionStorage.setItem(ACTIVE_SESSION_STORAGE_KEY, id);
+    if (name) {
+      sessionStorage.setItem(ACTIVE_SESSION_NAME_STORAGE_KEY, name);
+    } else {
+      sessionStorage.removeItem(ACTIVE_SESSION_NAME_STORAGE_KEY);
+    }
   } catch (e) {
     // sessionStorage unavailable (e.g. private browsing) -- the detail
     // screen will fall back to its own empty state.
@@ -73,7 +81,7 @@ export default function Screen() {
       });
       setSessions((prev) => [newSession, ...prev]);
       setJustCreatedId(newSession.id);
-      setActiveSessionId(newSession.id);
+      setActiveSession(newSession.id, newSession.name);
       navigate("sessions-sessionid");
     } catch (err) {
       setLoadError("Couldn't create a new session. Please try again.");
@@ -82,8 +90,8 @@ export default function Screen() {
     }
   };
 
-  const handleOpenSession = (id) => {
-    setActiveSessionId(id);
+  const handleOpenSession = (id, name) => {
+    setActiveSession(id, name);
     navigate("sessions-sessionid");
   };
 
@@ -338,7 +346,7 @@ export default function Screen() {
                         type="button"
                         data-wf={`i-1-0-0-${s.id}`}
                         className="sess-row-link"
-                        onClick={() => handleOpenSession(s.id)}
+                        onClick={() => handleOpenSession(s.id, s.name)}
                         aria-label={`Open session ${s.name ?? "Untitled Session"}`}
                         style={{
                           all: "unset",

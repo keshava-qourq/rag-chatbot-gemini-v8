@@ -44,13 +44,24 @@ class Chunk:
     content: str
 
 
-def chunk_pdf_bytes(data: bytes) -> list[Chunk]:
-    """Extract text per page from ``data`` and split it into ordered chunks.
+@dataclass(frozen=True)
+class ParsedDocument:
+    """The result of parsing and chunking a PDF: its chunks plus its total
+    page count (documents.page_count -- shown in the Documents list once a
+    document reaches 'ready', see docs/sdlc/architecture/data-model.md)."""
+
+    chunks: list[Chunk]
+    page_count: int
+
+
+def chunk_pdf_bytes(data: bytes) -> ParsedDocument:
+    """Extract text per page from ``data``, split it into ordered chunks, and
+    count its pages.
 
     Raises CorruptedPDFError if pypdf cannot read the file, or
     NoExtractableTextError if it reads fine but contains no extractable text
-    on any page (e.g. a scanned/image-only PDF). Never returns an empty list
-    on success: if it returns, there is at least one chunk.
+    on any page (e.g. a scanned/image-only PDF). Never returns an empty chunk
+    list on success: if it returns, there is at least one chunk.
     """
     try:
         reader = PdfReader(io.BytesIO(data))
@@ -74,4 +85,4 @@ def chunk_pdf_bytes(data: bytes) -> list[Chunk]:
             chunks.append(Chunk(chunk_index=index, page_number=page_number, content=piece))
             index += 1
 
-    return chunks
+    return ParsedDocument(chunks=chunks, page_count=len(pages_text))

@@ -12,8 +12,11 @@ const { Button, Input, Label, Table, THead, TBody, TR, TH, TD, Empty } = UI;
 
 // This screen's route carries no :sessionId segment (see App.tsx), so the id
 // of the session that was opened travels via sessionStorage, set by
-// Sessions.tsx right before it navigates here.
+// Sessions.tsx right before it navigates here. The session's name travels
+// alongside it so the heading below can show the real session, not a
+// hardcoded placeholder.
 const ACTIVE_SESSION_STORAGE_KEY = "currentSessionId";
+const ACTIVE_SESSION_NAME_STORAGE_KEY = "currentSessionName";
 
 // US-016-2: mirrors the backend's real per-session cap (MAX_DOCUMENTS_PER_SESSION
 // in backend/app/config.py). This is a fast local guard only, kept in sync with
@@ -131,9 +134,22 @@ function readActiveSessionId() {
   }
 }
 
+function readActiveSessionName() {
+  try {
+    return sessionStorage.getItem(ACTIVE_SESSION_NAME_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
 export default function Screen() {
   const navigate = useNavigate();
   const [sessionId] = React.useState(readActiveSessionId);
+  // The name carried over from Sessions.tsx is only a starting point -- it is
+  // absent when this screen is opened directly (a reload, a bookmarked URL),
+  // so it is refreshed from the real GET /sessions/{id} below rather than
+  // trusted as the permanent source of truth.
+  const [sessionName, setSessionName] = React.useState(readActiveSessionName);
 
   // AC-012: this session's real documents, fetched once from the API when
   // the session is opened -- never a seeded/sample list, and never carried
@@ -164,6 +180,26 @@ export default function Screen() {
     setUploadMessage(message);
     resetFileInput();
   }
+
+  // Confirms this session's real name against the backend (AC-012: this
+  // screen must reflect only the session that was actually opened, never a
+  // placeholder) and refreshes it in place if it differs from whatever was
+  // carried over from the sessions list.
+  React.useEffect(() => {
+    if (!sessionId) return;
+    let cancelled = false;
+    apiFetch(`/sessions/${sessionId}`, { method: "GET" })
+      .then((session) => {
+        if (!cancelled && session) setSessionName(session.name ?? null);
+      })
+      .catch(() => {
+        // Keep whatever name (if any) was carried over; the Documents/History
+        // panels below report their own errors independently.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
 
   // `showLoading` distinguishes the initial, user-visible fetch (full
   // loading/error UI) from a background poll refresh (AC-035..037): a poll
@@ -359,7 +395,7 @@ export default function Screen() {
             className="text-3xl font-bold leading-tight md:text-4xl"
             style={{ fontFamily: brand.fontHeading }}
           >
-            Session: Research Papers
+            Session: {sessionName ?? "Untitled Session"}
           </h1>
         </div>
 

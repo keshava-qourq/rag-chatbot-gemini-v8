@@ -117,7 +117,7 @@ def process_document(document_id: str) -> None:
             return
 
         try:
-            chunks = chunk_pdf_bytes(data)
+            parsed = chunk_pdf_bytes(data)
         except CorruptedPDFError as exc:
             logger.warning("Document %s is corrupted: %s", document_id, exc)
             _mark_failed(
@@ -136,6 +136,8 @@ def process_document(document_id: str) -> None:
                 "or image-only document, which is not currently supported.",
             )
             return
+
+        chunks = parsed.chunks
 
         try:
             client = _gemini_client()
@@ -182,6 +184,7 @@ def process_document(document_id: str) -> None:
 
         doc.status = "ready"
         doc.error_message = None
+        doc.page_count = parsed.page_count
         db.commit()
     except Exception as exc:  # noqa: BLE001 -- last-resort safety net, see NFR-011
         logger.exception("Unexpected error processing document %s: %s", document_id, exc)
