@@ -187,71 +187,69 @@ test.describe("[AC-037] a document resolving to 'failed' shows the status badge 
 });
 
 test.describe("[AC-035/036/037] polling stops once every document is in a terminal state", () => {
-  test(
-    "no further GET /sessions/{id}/documents calls happen once the only document has resolved to 'ready'",
-    async ({ page }) => {
-      const api = await playwrightRequest.newContext({ baseURL: API_BASE });
-      const token = await signup(api, uniqueEmail("poll-stops"));
-      const sessionId = await createSession(api, token, `Poll Stops ${Date.now()}`);
-      await api.dispose();
+  test("no further GET /sessions/{id}/documents calls happen once the only document has resolved to 'ready'", async ({
+    page,
+  }) => {
+    const api = await playwrightRequest.newContext({ baseURL: API_BASE });
+    const token = await signup(api, uniqueEmail("poll-stops"));
+    const sessionId = await createSession(api, token, `Poll Stops ${Date.now()}`);
+    await api.dispose();
 
-      const getCallCount = await routeDocuments(page, sessionId, (callNumber) =>
-        callNumber === 1
-          ? documentBody({ status: "processing" })
-          : documentBody({ status: "ready", page_count: 3 }),
-      );
+    const getCallCount = await routeDocuments(page, sessionId, (callNumber) =>
+      callNumber === 1
+        ? documentBody({ status: "processing" })
+        : documentBody({ status: "ready", page_count: 3 }),
+    );
 
-      await page.clock.install();
-      await injectBrowserState(page, token, sessionId);
-      await page.goto("/sessions-sessionid");
+    await page.clock.install();
+    await injectBrowserState(page, token, sessionId);
+    await page.goto("/sessions-sessionid");
 
-      await expect(page.getByText("Processing", { exact: true })).toBeVisible();
-      await page.clock.fastForward(POLL_INTERVAL_MS + 200);
-      await expect(page.getByText("Ready", { exact: true })).toBeVisible();
+    await expect(page.getByText("Processing", { exact: true })).toBeVisible();
+    await page.clock.fastForward(POLL_INTERVAL_MS + 200);
+    await expect(page.getByText("Ready", { exact: true })).toBeVisible();
 
-      const callsOnceReady = getCallCount();
-      expect(callsOnceReady).toBe(2);
+    const callsOnceReady = getCallCount();
+    expect(callsOnceReady).toBe(2);
 
-      // Advance well past several more poll intervals: a document already in
-      // a terminal state must never trigger another request.
-      await page.clock.fastForward(POLL_INTERVAL_MS * 4);
+    // Advance well past several more poll intervals: a document already in
+    // a terminal state must never trigger another request.
+    await page.clock.fastForward(POLL_INTERVAL_MS * 4);
 
-      expect(getCallCount()).toBe(callsOnceReady);
+    expect(getCallCount()).toBe(callsOnceReady);
 
-      await page.unrouteAll();
-    },
-  );
+    await page.unrouteAll();
+  });
 
-  test(
-    "no further GET /sessions/{id}/documents calls happen once the only document has resolved to 'failed'",
-    async ({ page }) => {
-      const api = await playwrightRequest.newContext({ baseURL: API_BASE });
-      const token = await signup(api, uniqueEmail("poll-stops-failed"));
-      const sessionId = await createSession(api, token, `Poll Stops Failed ${Date.now()}`);
-      await api.dispose();
+  test("no further GET /sessions/{id}/documents calls happen once the only document has resolved to 'failed'", async ({
+    page,
+  }) => {
+    const api = await playwrightRequest.newContext({ baseURL: API_BASE });
+    const token = await signup(api, uniqueEmail("poll-stops-failed"));
+    const sessionId = await createSession(api, token, `Poll Stops Failed ${Date.now()}`);
+    await api.dispose();
 
-      const getCallCount = await routeDocuments(page, sessionId, (callNumber) =>
-        callNumber === 1
-          ? documentBody({ status: "processing" })
-          : documentBody({ status: "failed", error_message: "Processing failed." }),
-      );
+    const getCallCount = await routeDocuments(page, sessionId, (callNumber) =>
+      callNumber === 1
+        ? documentBody({ status: "processing" })
+        : documentBody({ status: "failed", error_message: "Processing failed." }),
+    );
 
-      await page.clock.install();
-      await injectBrowserState(page, token, sessionId);
-      await page.goto("/sessions-sessionid");
+    await page.clock.install();
+    await injectBrowserState(page, token, sessionId);
+    await page.goto("/sessions-sessionid");
 
-      await expect(page.getByText("Processing", { exact: true })).toBeVisible();
-      await page.clock.fastForward(POLL_INTERVAL_MS + 200);
-      await expect(page.getByText("Failed", { exact: true })).toBeVisible();
+    await expect(page.getByText("Processing", { exact: true })).toBeVisible();
+    await page.clock.fastForward(POLL_INTERVAL_MS + 200);
+    await expect(page.getByText("Failed", { exact: true })).toBeVisible();
 
-      const callsOnceFailed = getCallCount();
-      expect(callsOnceFailed).toBe(2);
+    const callsOnceFailed = getCallCount();
+    expect(callsOnceFailed).toBe(2);
 
-      await page.clock.fastForward(POLL_INTERVAL_MS * 4);
+    await page.clock.fastForward(POLL_INTERVAL_MS * 4);
 
-      expect(getCallCount()).toBe(callsOnceFailed);
+    expect(getCallCount()).toBe(callsOnceFailed);
 
-      await page.unrouteAll();
-    },
-  );
+    await page.unrouteAll();
+  });
 });

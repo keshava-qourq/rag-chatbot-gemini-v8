@@ -38,8 +38,7 @@ function processingDoc(overrides = {}) {
 }
 
 function docCallCount() {
-  return mockedApiFetch.mock.calls.filter(([path]) => path === "/sessions/sess-1/documents")
-    .length;
+  return mockedApiFetch.mock.calls.filter(([path]) => path === "/sessions/sess-1/documents").length;
 }
 
 beforeEach(() => {
@@ -52,148 +51,124 @@ afterEach(() => {
 });
 
 describe("SessionsSessionid documents polling", () => {
-  it(
-    "[AC-035] polls GET /sessions/{id}/documents repeatedly while a document is 'processing'",
-    async () => {
-      mockedApiFetch.mockImplementation(async (path: string) => {
-        if (path === "/sessions/sess-1/documents") return [processingDoc()];
-        if (path === "/sessions/sess-1/messages") return [];
-        throw new Error(`Unexpected apiFetch call: ${path}`);
-      });
+  it("[AC-035] polls GET /sessions/{id}/documents repeatedly while a document is 'processing'", async () => {
+    mockedApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/sessions/sess-1/documents") return [processingDoc()];
+      if (path === "/sessions/sess-1/messages") return [];
+      throw new Error(`Unexpected apiFetch call: ${path}`);
+    });
 
-      render(<Screen />);
+    render(<Screen />);
 
-      await waitFor(() => expect(screen.getByText("report.pdf")).toBeInTheDocument());
-      expect(docCallCount()).toBe(1);
+    await waitFor(() => expect(screen.getByText("report.pdf")).toBeInTheDocument());
+    expect(docCallCount()).toBe(1);
 
-      await waitFor(() => expect(docCallCount()).toBeGreaterThanOrEqual(2), POLL_WAIT);
-      await waitFor(() => expect(docCallCount()).toBeGreaterThanOrEqual(3), POLL_WAIT);
-    },
-    20000,
-  );
+    await waitFor(() => expect(docCallCount()).toBeGreaterThanOrEqual(2), POLL_WAIT);
+    await waitFor(() => expect(docCallCount()).toBeGreaterThanOrEqual(3), POLL_WAIT);
+  }, 20000);
 
-  it(
-    "[AC-036] updates the displayed status to 'ready' in place once processing completes, without reload",
-    async () => {
-      let call = 0;
-      mockedApiFetch.mockImplementation(async (path: string) => {
-        if (path === "/sessions/sess-1/documents") {
-          call += 1;
-          if (call === 1) return [processingDoc()];
-          return [processingDoc({ status: "ready", page_count: 12 })];
-        }
-        if (path === "/sessions/sess-1/messages") return [];
-        throw new Error(`Unexpected apiFetch call: ${path}`);
-      });
+  it("[AC-036] updates the displayed status to 'ready' in place once processing completes, without reload", async () => {
+    let call = 0;
+    mockedApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/sessions/sess-1/documents") {
+        call += 1;
+        if (call === 1) return [processingDoc()];
+        return [processingDoc({ status: "ready", page_count: 12 })];
+      }
+      if (path === "/sessions/sess-1/messages") return [];
+      throw new Error(`Unexpected apiFetch call: ${path}`);
+    });
 
-      render(<Screen />);
+    render(<Screen />);
 
-      await waitFor(() => expect(screen.getByText("Processing")).toBeInTheDocument());
-      await waitFor(() => expect(screen.getByText("Ready")).toBeInTheDocument(), POLL_WAIT);
-      expect(screen.queryByText("Processing")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("Processing")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Ready")).toBeInTheDocument(), POLL_WAIT);
+    expect(screen.queryByText("Processing")).not.toBeInTheDocument();
 
-      const callsAfterReady = docCallCount();
-      await new Promise((resolve) => setTimeout(resolve, 4500));
-      expect(docCallCount()).toBe(callsAfterReady);
-    },
-    20000,
-  );
+    const callsAfterReady = docCallCount();
+    await new Promise((resolve) => setTimeout(resolve, 4500));
+    expect(docCallCount()).toBe(callsAfterReady);
+  }, 20000);
 
-  it(
-    "[AC-037] updates the displayed status to 'failed' and shows the backend's error_message",
-    async () => {
-      let call = 0;
-      mockedApiFetch.mockImplementation(async (path: string) => {
-        if (path === "/sessions/sess-1/documents") {
-          call += 1;
-          if (call === 1) return [processingDoc()];
-          return [
-            processingDoc({
-              status: "failed",
-              error_message: "No extractable text found.",
-            }),
-          ];
-        }
-        if (path === "/sessions/sess-1/messages") return [];
-        throw new Error(`Unexpected apiFetch call: ${path}`);
-      });
+  it("[AC-037] updates the displayed status to 'failed' and shows the backend's error_message", async () => {
+    let call = 0;
+    mockedApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/sessions/sess-1/documents") {
+        call += 1;
+        if (call === 1) return [processingDoc()];
+        return [
+          processingDoc({
+            status: "failed",
+            error_message: "No extractable text found.",
+          }),
+        ];
+      }
+      if (path === "/sessions/sess-1/messages") return [];
+      throw new Error(`Unexpected apiFetch call: ${path}`);
+    });
 
-      render(<Screen />);
+    render(<Screen />);
 
-      await waitFor(() => expect(screen.getByText("Processing")).toBeInTheDocument());
-      await waitFor(() => expect(screen.getByText("Failed")).toBeInTheDocument(), POLL_WAIT);
-      expect(screen.getByText("No extractable text found.")).toBeInTheDocument();
-    },
-    20000,
-  );
+    await waitFor(() => expect(screen.getByText("Processing")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Failed")).toBeInTheDocument(), POLL_WAIT);
+    expect(screen.getByText("No extractable text found.")).toBeInTheDocument();
+  }, 20000);
 
-  it(
-    "does not poll when no document is 'processing' on initial load",
-    async () => {
-      mockedApiFetch.mockImplementation(async (path: string) => {
-        if (path === "/sessions/sess-1/documents") return [processingDoc({ status: "ready" })];
-        if (path === "/sessions/sess-1/messages") return [];
-        throw new Error(`Unexpected apiFetch call: ${path}`);
-      });
+  it("does not poll when no document is 'processing' on initial load", async () => {
+    mockedApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/sessions/sess-1/documents") return [processingDoc({ status: "ready" })];
+      if (path === "/sessions/sess-1/messages") return [];
+      throw new Error(`Unexpected apiFetch call: ${path}`);
+    });
 
-      render(<Screen />);
+    render(<Screen />);
 
-      await waitFor(() => expect(screen.getByText("Ready")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Ready")).toBeInTheDocument());
 
-      await new Promise((resolve) => setTimeout(resolve, 4500));
-      expect(docCallCount()).toBe(1);
-    },
-    20000,
-  );
+    await new Promise((resolve) => setTimeout(resolve, 4500));
+    expect(docCallCount()).toBe(1);
+  }, 20000);
 
-  it(
-    "clears the poll timer on unmount so no further calls happen after the component unmounts",
-    async () => {
-      mockedApiFetch.mockImplementation(async (path: string) => {
-        if (path === "/sessions/sess-1/documents") return [processingDoc()];
-        if (path === "/sessions/sess-1/messages") return [];
-        throw new Error(`Unexpected apiFetch call: ${path}`);
-      });
+  it("clears the poll timer on unmount so no further calls happen after the component unmounts", async () => {
+    mockedApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/sessions/sess-1/documents") return [processingDoc()];
+      if (path === "/sessions/sess-1/messages") return [];
+      throw new Error(`Unexpected apiFetch call: ${path}`);
+    });
 
-      const { unmount } = render(<Screen />);
-      await waitFor(() => expect(screen.getByText("Processing")).toBeInTheDocument());
+    const { unmount } = render(<Screen />);
+    await waitFor(() => expect(screen.getByText("Processing")).toBeInTheDocument());
 
-      unmount();
-      const callsAtUnmount = docCallCount();
+    unmount();
+    const callsAtUnmount = docCallCount();
 
-      await new Promise((resolve) => setTimeout(resolve, 5500));
-      expect(docCallCount()).toBe(callsAtUnmount);
-    },
-    20000,
-  );
+    await new Promise((resolve) => setTimeout(resolve, 5500));
+    expect(docCallCount()).toBe(callsAtUnmount);
+  }, 20000);
 
-  it(
-    "does not refetch or reset conversation history while polling documents",
-    async () => {
-      let call = 0;
-      mockedApiFetch.mockImplementation(async (path: string) => {
-        if (path === "/sessions/sess-1/documents") {
-          call += 1;
-          return call === 1 ? [processingDoc()] : [processingDoc({ status: "ready" })];
-        }
-        if (path === "/sessions/sess-1/messages") return [];
-        throw new Error(`Unexpected apiFetch call: ${path}`);
-      });
+  it("does not refetch or reset conversation history while polling documents", async () => {
+    let call = 0;
+    mockedApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/sessions/sess-1/documents") {
+        call += 1;
+        return call === 1 ? [processingDoc()] : [processingDoc({ status: "ready" })];
+      }
+      if (path === "/sessions/sess-1/messages") return [];
+      throw new Error(`Unexpected apiFetch call: ${path}`);
+    });
 
-      render(<Screen />);
-      await waitFor(() => expect(screen.getByText("Processing")).toBeInTheDocument());
+    render(<Screen />);
+    await waitFor(() => expect(screen.getByText("Processing")).toBeInTheDocument());
 
-      const messagesCallsBefore = mockedApiFetch.mock.calls.filter(
-        ([path]) => path === "/sessions/sess-1/messages",
-      ).length;
+    const messagesCallsBefore = mockedApiFetch.mock.calls.filter(
+      ([path]) => path === "/sessions/sess-1/messages",
+    ).length;
 
-      await waitFor(() => expect(screen.getByText("Ready")).toBeInTheDocument(), POLL_WAIT);
+    await waitFor(() => expect(screen.getByText("Ready")).toBeInTheDocument(), POLL_WAIT);
 
-      const messagesCallsAfter = mockedApiFetch.mock.calls.filter(
-        ([path]) => path === "/sessions/sess-1/messages",
-      ).length;
-      expect(messagesCallsAfter).toBe(messagesCallsBefore);
-    },
-    20000,
-  );
+    const messagesCallsAfter = mockedApiFetch.mock.calls.filter(
+      ([path]) => path === "/sessions/sess-1/messages",
+    ).length;
+    expect(messagesCallsAfter).toBe(messagesCallsBefore);
+  }, 20000);
 });
