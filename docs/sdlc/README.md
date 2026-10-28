@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 Build a rag chatbot where user can upload there own documents and ask queries about them use gemini-2.5-flash for answers and gemini-embedding-001 for embeddings and have chat history and sessions
 
-**Documentation version:** v11
+**Documentation version:** v12
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -15,7 +15,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 |---|---|
 | [Requirements](requirements/README.md) | v1 approved |
 | [Architecture](architecture/README.md) | 18 entries |
-| [Development](development/README.md) | 5 entries |
+| [Development](development/README.md) | 7 entries |
 | [Testing](testing/README.md) | 1 entry |
 | [Deployment](deployment/README.md) | 1 entry |
 | [Maintenance](maintenance/README.md) | 1 entry |
@@ -31,7 +31,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 | [Runbook](deployment/runbook.md) | deployed |
 | [Release notes](deployment/release-notes.md) | 4 releases |
 | [Traceability matrix](traceability-matrix.md) | 11 requirements |
-| [Changelog](CHANGELOG.md) | 11 versions |
+| [Changelog](CHANGELOG.md) | 12 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -51,17 +51,13 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 
 ### Development
 
-- Epics (EPIC-001 through EPIC-005) have no assigned role/owner recorded.
-- Plan does not state who approved version 1 or when.
-- Reason the ticket was skipped is not stated.
-- No commit exists for this ticket, so it is unclear whether any of US-009-T1–T4 were implemented.
-- Status of sub-tasks US-009-T1 through US-009-T4 not individually reported.
-- No commit exists for this ticket.
-- Dependency on US-009 (also skipped) suggests citations feature cannot function without the underlying QA pipeline; this blocking relationship is not explicitly confirmed by the input.
-- No commit exists for this ticket, so chat history persistence/view functionality cannot be confirmed as built.
-- Discrepancy: run status says 'completed' but all reported tickets are 'skipped' with no commits -- unclear what 'completed' refers to.
-- No development status recorded for US-001 through US-008 or their sub-tasks (US-007-T1–T4, US-008-T1–T4) in this phase input; it is unknown whether they were implemented, are pending, or were omitted from this report.
-- No commits are recorded anywhere in this development run, so no code artifacts can be traced to any requirement.
+- Plan input does not state which backlog items/tasks are assigned to which sprint -- only per-sprint goals and capacities are given, so sprint-to-item mapping below is inferred thematically, not confirmed.
+- Epics themselves carry no story points or assigned role in the input.
+- No explicit item-to-sprint assignment was provided; association above is inferred from the sprint goal text only.
+- No per-sub-task (US-008-T1..T4) completion confirmation was given, only the parent ticket's delivered status and commit.
+- No test or review evidence was included in this phase's input for this ticket.
+- Discrepancy: phase-level run status says 'completed' but 10 of 11 planned stories have no ticket-level delivery record in the input -- flagging for confirmation rather than assuming they were delivered or skipped.
+- No commit references, review notes, or task-level status exist for these items in this phase's input.
 
 ### Testing
 

@@ -7,8 +7,7 @@
 
 **Commit:** `24ac353`
 
-**Delivered:**
-- US-008: Parse, chunk, and embed uploaded PDFs
+_Nothing delivered in this window._
 
 ## e28177f9515c — 2026-10-28
 
