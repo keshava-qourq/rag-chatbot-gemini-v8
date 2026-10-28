@@ -75,37 +75,6 @@ export default function Screen() {
   const MAX_DOCS = 5;
   const MAX_SIZE_BYTES = 20 * 1024 * 1024;
 
-  const INITIAL_DOCUMENTS = [
-    {
-      id: "doc-policy",
-      filename: "policy.pdf",
-      status: "ready",
-      page_count: 12,
-      size_bytes: 2_430_000,
-      error_message: null,
-      created_at: "2026-10-24T09:12:00Z",
-    },
-    {
-      id: "doc-handbook",
-      filename: "handbook.pdf",
-      status: "ready",
-      page_count: 34,
-      size_bytes: 8_120_000,
-      error_message: null,
-      created_at: "2026-10-25T14:45:00Z",
-    },
-    {
-      id: "doc-marketscan",
-      filename: "market-scan-2024.pdf",
-      status: "failed",
-      page_count: null,
-      size_bytes: 5_310_000,
-      error_message:
-        "No extractable text found — this looks like a scanned, image-only PDF. OCR isn't supported yet; please re-upload a text-based PDF.",
-      created_at: "2026-10-26T11:03:00Z",
-    },
-  ];
-
   function formatBytes(bytes) {
     if (bytes == null) return "—";
     const mb = bytes / (1024 * 1024);
@@ -113,6 +82,7 @@ export default function Screen() {
   }
 
   function formatTime(iso) {
+    if (!iso) return "—";
     try {
       return new Date(iso).toLocaleString(undefined, {
         month: "short",
@@ -133,7 +103,13 @@ export default function Screen() {
     WebkitBackdropFilter: "blur(20px)",
   };
 
-  const [documents, setDocuments] = React.useState(INITIAL_DOCUMENTS);
+  // AC-012: this session's real documents, fetched once from the API when
+  // the session is opened -- never a seeded/sample list, and never carried
+  // over from a previously viewed session (sessionId is read once per mount,
+  // and the detail screen is remounted each time Sessions.tsx opens a row).
+  const [documents, setDocuments] = React.useState([]);
+  const [documentsLoading, setDocumentsLoading] = React.useState(true);
+  const [documentsError, setDocumentsError] = React.useState(null);
   const [exchanges, setExchanges] = React.useState([]);
   const [historyLoading, setHistoryLoading] = React.useState(true);
   const [historyError, setHistoryError] = React.useState(null);
@@ -168,9 +144,14 @@ export default function Screen() {
     };
   }, []);
 
+  // This local "processing -> ready" timer only ever drives documents added
+  // through this screen's own (still client-only, see US-007) upload
+  // control -- flagged with `simulated: true` below -- never the real rows
+  // this screen fetched from GET /sessions/{id}/documents, whose status only
+  // ever changes by re-fetching from the API.
   React.useEffect(() => {
     documents.forEach((doc) => {
-      if (doc.status === "processing" && !processingTimers.current[doc.id]) {
+      if (doc.status === "processing" && doc.simulated && !processingTimers.current[doc.id]) {
         processingTimers.current[doc.id] = setTimeout(() => {
           setDocuments((prev) =>
             prev.map((d) => {
@@ -193,6 +174,29 @@ export default function Screen() {
       }
     });
   }, [documents]);
+
+  const loadDocuments = React.useCallback(async () => {
+    if (!sessionId) {
+      setDocumentsLoading(false);
+      return;
+    }
+    setDocumentsError(null);
+    try {
+      // AC-012: only this session's real documents from the API -- no
+      // seeded/sample array, and nothing carried over from another session.
+      const docs = await apiFetch(`/sessions/${sessionId}/documents`, { method: "GET" });
+      setDocuments(docs ?? []);
+    } catch (err) {
+      setDocumentsError("Couldn't load documents. Try refreshing the page.");
+    } finally {
+      setDocumentsLoading(false);
+    }
+  }, [sessionId]);
+
+  React.useEffect(() => {
+    setDocumentsLoading(true);
+    loadDocuments();
+  }, [loadDocuments]);
 
   const loadHistory = React.useCallback(async () => {
     if (!sessionId) {
@@ -246,6 +250,7 @@ export default function Screen() {
       size_bytes: file.size,
       error_message: null,
       created_at: new Date().toISOString(),
+      simulated: true,
     };
     setDocuments((prev) => [...prev, newDoc]);
     setUploadIsError(false);
@@ -367,51 +372,78 @@ export default function Screen() {
             >
               Documents
             </h2>
-            <div className="overflow-x-auto">
-              <Table>
-                <THead>
-                  <TR>
-                    <TH data-wf="i-1-0-0" scope="col">
-                      Filename
-                    </TH>
-                    <TH data-wf="i-1-0-1" scope="col">
-                      Status
-                    </TH>
-                    <TH data-wf="i-1-0-2" scope="col" className="text-right">
-                      Pages
-                    </TH>
-                  </TR>
-                </THead>
-                <TBody>
-                  {documents.map((doc) => (
-                    <TR key={doc.id}>
-                      <TD>
-                        <div className="flex flex-col">
-                          <span className="font-medium" style={{ color: "#f3f6fb" }}>
-                            {doc.filename}
-                          </span>
-                          <span className="text-xs" style={{ color: brand.neutralColor }}>
-                            {formatBytes(doc.size_bytes)}
-                          </span>
-                          {doc.status === "failed" && doc.error_message && (
-                            <span
-                              className="mt-1 max-w-[220px] text-xs"
-                              style={{ color: "#fb7185" }}
-                            >
-                              {doc.error_message}
-                            </span>
-                          )}
-                        </div>
-                      </TD>
-                      <TD>
-                        <StatusBadge status={doc.status} />
-                      </TD>
-                      <TD className="text-right tabular-nums">{doc.page_count ?? "—"}</TD>
+            {documentsLoading ? (
+              <p className="flex items-center gap-2 text-sm" style={{ color: brand.neutralColor }}>
+                <Icons.Clock size={14} aria-hidden="true" />
+                Loading documents…
+              </p>
+            ) : documentsError ? (
+              <p
+                role="alert"
+                className="flex items-center gap-2 text-sm"
+                style={{ color: "#fb7185" }}
+              >
+                <Icons.AlertCircle size={15} aria-hidden="true" />
+                {documentsError}
+              </p>
+            ) : documents.length === 0 ? (
+              <Empty
+                title="No documents yet"
+                description="Upload a PDF below to get started."
+              />
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <THead>
+                    <TR>
+                      <TH data-wf="i-1-0-0" scope="col">
+                        Filename
+                      </TH>
+                      <TH data-wf="i-1-0-1" scope="col">
+                        Status
+                      </TH>
+                      <TH data-wf="i-1-0-2" scope="col" className="text-right">
+                        Pages
+                      </TH>
+                      <TH data-wf="i-1-0-3" scope="col" className="text-right">
+                        Uploaded
+                      </TH>
                     </TR>
-                  ))}
-                </TBody>
-              </Table>
-            </div>
+                  </THead>
+                  <TBody>
+                    {documents.map((doc) => (
+                      <TR key={doc.id}>
+                        <TD>
+                          <div className="flex flex-col">
+                            <span className="font-medium" style={{ color: "#f3f6fb" }}>
+                              {doc.filename}
+                            </span>
+                            <span className="text-xs" style={{ color: brand.neutralColor }}>
+                              {formatBytes(doc.size_bytes)}
+                            </span>
+                            {doc.status === "failed" && doc.error_message && (
+                              <span
+                                className="mt-1 max-w-[220px] text-xs"
+                                style={{ color: "#fb7185" }}
+                              >
+                                {doc.error_message}
+                              </span>
+                            )}
+                          </div>
+                        </TD>
+                        <TD>
+                          <StatusBadge status={doc.status} />
+                        </TD>
+                        <TD className="text-right tabular-nums">{doc.page_count ?? "—"}</TD>
+                        <TD className="text-right tabular-nums text-xs">
+                          {formatTime(doc.created_at)}
+                        </TD>
+                      </TR>
+                    ))}
+                  </TBody>
+                </Table>
+              </div>
+            )}
           </section>
 
           {/* Upload form */}

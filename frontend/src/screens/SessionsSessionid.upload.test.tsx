@@ -44,7 +44,10 @@ function pdfFile(name: string, sizeBytes?: number): File {
 beforeEach(() => {
   sessionStorage.setItem("currentSessionId", "sess-1");
   mockedApiFetch.mockReset();
-  mockedApiFetch.mockResolvedValue([]); // the history GET every mount fires
+  // This screen fetches both the documents list and the message history on
+  // mount (AC-012); starting both empty keeps these upload-only tests
+  // independent of real document/history data.
+  mockedApiFetch.mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -113,7 +116,9 @@ describe("SessionsSessionid PDF upload", () => {
     const oversized = pdfFile("huge.pdf", 21 * 1024 * 1024);
     selectFile(oversized);
 
-    await waitFor(() => expect(screen.getByText(/over the 20MB per-file limit/i)).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText(/over the 20MB per-file limit/i)).toBeInTheDocument(),
+    );
     expect(screen.queryByText("huge.pdf")).not.toBeInTheDocument();
   });
 
@@ -133,18 +138,16 @@ describe("SessionsSessionid PDF upload", () => {
     render(<Screen />);
     await waitFor(() => expect(mockedApiFetch).toHaveBeenCalled());
 
-    // The screen seeds 3 sample documents and enforces a 5-document cap; add
-    // two more through the real control to reach the cap via real user action.
-    selectFile(pdfFile("fourth.pdf", 500_000));
-    await waitFor(() => expect(screen.getByText("fourth.pdf")).toBeInTheDocument());
-    selectFile(pdfFile("fifth.pdf", 500_000));
-    await waitFor(() => expect(screen.getByText("fifth.pdf")).toBeInTheDocument());
+    // Starting from an empty session (the API returned no documents), add
+    // five through the real control to reach the cap via real user action.
+    for (const name of ["first.pdf", "second.pdf", "third.pdf", "fourth.pdf", "fifth.pdf"]) {
+      selectFile(pdfFile(name, 500_000));
+      await waitFor(() => expect(screen.getByText(name)).toBeInTheDocument());
+    }
 
     const input = document.getElementById("pdf-file-input") as HTMLInputElement;
     expect(input).toBeDisabled();
-    expect(
-      screen.getByText(/Document limit reached for this session/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Document limit reached for this session/i)).toBeInTheDocument();
 
     // Attempting to select a sixth file anyway must not attach it.
     selectFile(pdfFile("sixth.pdf", 500_000));
