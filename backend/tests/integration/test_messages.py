@@ -14,7 +14,7 @@ through the S3-backed upload route or the Redis-backed processing job.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
@@ -23,8 +23,8 @@ import app.main  # noqa: F401 -- creates the schema before this runs
 from app.database import SessionLocal
 from app.jobs import EMBEDDING_MODEL
 from app.main import app
-from app.models import Citation, Document, DocumentChunk, Message, User
 from app.models import EMBEDDING_DIM as DIM
+from app.models import Citation, Document, DocumentChunk, Message, User
 from app.rag import GENERATION_MODEL, NOT_FOUND_ANSWER
 
 client = TestClient(app)
@@ -97,9 +97,7 @@ def _add_chunk(
     return chunk
 
 
-def _add_message(
-    db, *, session_id: str, role: str, content: str, created_at: datetime
-) -> Message:
+def _add_message(db, *, session_id: str, role: str, content: str, created_at: datetime) -> Message:
     message = Message(
         session_id=uuid.UUID(session_id),
         role=role,
@@ -292,9 +290,7 @@ def test_ac023_other_sessions_chunks_are_never_retrieved_or_referenced(monkeypat
 
 def test_ac024_no_ready_documents_rejects_without_calling_gemini(monkeypatch) -> None:
     def _unexpected_client():
-        raise AssertionError(
-            "Gemini must not be called when the session has no ready documents"
-        )
+        raise AssertionError("Gemini must not be called when the session has no ready documents")
 
     monkeypatch.setattr("app.rag._gemini_client", _unexpected_client)
 
@@ -489,7 +485,7 @@ def test_ac029_message_history_is_returned_in_chronological_order_across_request
         )
         db.flush()
 
-        base = datetime.now(timezone.utc)
+        base = datetime.now(UTC)
         # Insert out of chronological order on purpose: the route must sort by
         # created_at, not by insertion/primary-key order.
         third_q = _add_message(
@@ -591,7 +587,7 @@ def test_ac030_messages_from_another_session_are_never_included() -> None:
         session_a = _create_session(token, "Session A")
         session_b = _create_session(token, "Session B")
 
-        base = datetime.now(timezone.utc)
+        base = datetime.now(UTC)
         msg_a = _add_message(
             db,
             session_id=session_a,
