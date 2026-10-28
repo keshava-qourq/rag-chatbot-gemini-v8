@@ -1,4 +1,9 @@
-import { expect, test, request as playwrightRequest, type APIRequestContext } from "@playwright/test";
+import {
+  expect,
+  test,
+  request as playwrightRequest,
+  type APIRequestContext,
+} from "@playwright/test";
 
 // The backend the webServer block in playwright.config.ts boots independently of the
 // frontend preview server that `baseURL` points at, so setup calls go straight to it.
@@ -34,11 +39,7 @@ async function login(api: APIRequestContext, email: string): Promise<string> {
   return body.access_token as string;
 }
 
-async function createSession(
-  api: APIRequestContext,
-  token: string,
-  name: string,
-): Promise<string> {
+async function createSession(api: APIRequestContext, token: string, name: string): Promise<string> {
   const response = await api.post("/sessions", {
     headers: { Authorization: `Bearer ${token}` },
     data: { name },
