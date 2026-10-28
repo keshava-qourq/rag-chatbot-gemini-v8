@@ -71,6 +71,23 @@ def _to_message_out(message: Message) -> MessageOut:
     )
 
 
+def _gemini_unavailable(session_id: uuid.UUID, step: str) -> HTTPException:
+    logger.error("Session %s: Gemini is not configured for %s.", session_id, step)
+    return HTTPException(
+        status_code=503,
+        detail="The answer could not be generated because the Gemini API is not configured.",
+    )
+
+
+def _gemini_call_failed(session_id: uuid.UUID, step: str, exc: Exception) -> HTTPException:
+    logger.error("Session %s: Gemini %s call failed: %s", session_id, step, exc)
+    return HTTPException(
+        status_code=502,
+        detail="The answer could not be generated because the Gemini API call failed. "
+        "Please try again later.",
+    )
+
+
 @router.get("/sessions", response_model=list[SessionOut])
 async def list_sessions(
     current_user: User = Depends(get_current_user),
@@ -187,10 +204,7 @@ async def list_messages(
     sid = _parse_session_id(session_id)
     get_owned_or_404(db, ChatSession, sid, current_user.id)
     messages = (
-        db.query(Message)
-        .filter(Message.session_id == sid)
-        .order_by(Message.created_at.asc())
-        .all()
+        db.query(Message).filter(Message.session_id == sid).order_by(Message.created_at.asc()).all()
     )
     return [_to_message_out(message) for message in messages]
 
@@ -215,34 +229,16 @@ async def create_message(
             detail="This session has no ready documents available to answer from yet.",
         ) from None
     except GenerationConfigError:
-        logger.error("Session %s: Gemini is not configured for retrieval.", sid)
-        raise HTTPException(
-            status_code=503,
-            detail="The answer could not be generated because the Gemini API is not configured.",
-        ) from None
+        raise _gemini_unavailable(sid, "retrieval") from None
     except GenerationCallError as exc:
-        logger.error("Session %s: failed to embed question: %s", sid, exc)
-        raise HTTPException(
-            status_code=502,
-            detail="The answer could not be generated because the Gemini API call failed. "
-            "Please try again later.",
-        ) from None
+        raise _gemini_call_failed(sid, "retrieval", exc) from None
 
     try:
         answer = generate_answer(question, chunks)
     except GenerationConfigError:
-        logger.error("Session %s: Gemini is not configured for generation.", sid)
-        raise HTTPException(
-            status_code=503,
-            detail="The answer could not be generated because the Gemini API is not configured.",
-        ) from None
+        raise _gemini_unavailable(sid, "generation") from None
     except GenerationCallError as exc:
-        logger.error("Session %s: Gemini generation call failed: %s", sid, exc)
-        raise HTTPException(
-            status_code=502,
-            detail="The answer could not be generated because the Gemini API call failed. "
-            "Please try again later.",
-        ) from None
+        raise _gemini_call_failed(sid, "generation", exc) from None
 
     user_message = Message(session_id=sid, role="user", content=question)
     db.add(user_message)

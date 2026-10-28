@@ -13,6 +13,11 @@ from pydantic import BaseModel, field_validator
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
+def _as_str(value: object) -> str:
+    """Stringify a UUID id field before validation; pass other values through."""
+    return str(value) if isinstance(value, uuid.UUID) else value
+
+
 class StubResponse(BaseModel):
     """What a generated route returns until someone implements it.
 
@@ -91,7 +96,7 @@ class SessionOut(BaseModel):
     @field_validator("id", mode="before")
     @classmethod
     def _stringify_id(cls, value: object) -> str:
-        return str(value) if isinstance(value, uuid.UUID) else value
+        return _as_str(value)
 
 
 class DocumentOut(BaseModel):
@@ -110,7 +115,7 @@ class DocumentOut(BaseModel):
     @field_validator("id", mode="before")
     @classmethod
     def _stringify_id(cls, value: object) -> str:
-        return str(value) if isinstance(value, uuid.UUID) else value
+        return _as_str(value)
 
 
 class MessageCreateRequest(BaseModel):
@@ -141,7 +146,7 @@ class CitationOut(BaseModel):
     @field_validator("id", "document_id", mode="before")
     @classmethod
     def _stringify_id(cls, value: object) -> str:
-        return str(value) if isinstance(value, uuid.UUID) else value
+        return _as_str(value)
 
 
 class MessageOut(BaseModel):
@@ -159,4 +164,4 @@ class MessageOut(BaseModel):
     @field_validator("id", "session_id", mode="before")
     @classmethod
     def _stringify_id(cls, value: object) -> str:
-        return str(value) if isinstance(value, uuid.UUID) else value
+        return _as_str(value)
