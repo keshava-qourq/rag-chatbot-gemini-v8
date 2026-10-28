@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 Build a rag chatbot where user can upload there own documents and ask queries about them use gemini-2.5-flash for answers and gemini-embedding-001 for embeddings and have chat history and sessions
 
-**Documentation version:** v14
+**Documentation version:** v15
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -29,9 +29,9 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 | [Tests](testing/test-cases.md) | 0 tests |
 | [Deployment guide](deployment/deployment-guide.md) | deployed |
 | [Runbook](deployment/runbook.md) | deployed |
-| [Release notes](deployment/release-notes.md) | 5 releases |
+| [Release notes](deployment/release-notes.md) | 6 releases |
 | [Traceability matrix](traceability-matrix.md) | 11 requirements |
-| [Changelog](CHANGELOG.md) | 14 versions |
+| [Changelog](CHANGELOG.md) | 15 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -71,12 +71,13 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 
 ### Deployment
 
-- No deployment date recorded.
-- No approver or responsible party recorded for this release.
-- No indication of which specific requirements/features (US-001 through US-011) are included in this version -- all are tentatively linked pending confirmation.
-- No rollback plan, infrastructure/environment details (e.g. region, scaling config), or CI/CD pipeline information provided.
-- No post-deployment validation, smoke test, or monitoring results recorded.
-- No confirmation of database/vector store or secrets configuration for the live environment.
+- No deployment date/timestamp provided.
+- No record of who approved or triggered this deployment.
+- No information on deployment method (CI/CD pipeline, manual, containerized, etc.).
+- No rollback or incident plan documented.
+- No post-deployment validation or smoke test results recorded.
+- No mapping given between this deployment and which requirements/features (US-001 through US-011) are actually live in this version -- related_ids assumed as full set but not confirmed by input.
+- No environment variables, infrastructure, or hosting provider details (e.g. database, vector store hosting) documented.
 
 ### Maintenance
 
