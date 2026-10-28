@@ -1,5 +1,5 @@
 // @ts-nocheck -- generated from the approved design under its JS runtime contract; not hand-written TypeScript.
- 
+
 import React from "react";
 
 import * as UI from "@/lib/ui";
@@ -143,13 +143,13 @@ export default function Screen() {
   const [askError, setAskError] = React.useState(null);
   const [uploadMessage, setUploadMessage] = React.useState(null);
   const [uploadIsError, setUploadIsError] = React.useState(false);
+  const [uploading, setUploading] = React.useState(false);
   const idCounter = React.useRef(0);
   const fileInputRef = React.useRef(null);
-  const processingTimers = React.useRef({});
 
   function nextId(prefix) {
     idCounter.current += 1;
-    return `${prefix}-${Date.now()}-${idCounter.current}`;
+    return `${prefix}-${idCounter.current}`;
   }
 
   function resetFileInput() {
@@ -161,43 +161,6 @@ export default function Screen() {
     setUploadMessage(message);
     resetFileInput();
   }
-
-  React.useEffect(() => {
-    return () => {
-      Object.values(processingTimers.current).forEach(clearTimeout);
-    };
-  }, []);
-
-  // This local "processing -> ready" timer only ever drives documents added
-  // through this screen's own (still client-only, see US-007) upload
-  // control -- flagged with `simulated: true` below -- never the real rows
-  // this screen fetched from GET /sessions/{id}/documents, whose status only
-  // ever changes by re-fetching from the API.
-  React.useEffect(() => {
-    documents.forEach((doc) => {
-      if (doc.status === "processing" && doc.simulated && !processingTimers.current[doc.id]) {
-        processingTimers.current[doc.id] = setTimeout(() => {
-          setDocuments((prev) =>
-            prev.map((d) => {
-              if (d.id !== doc.id) return d;
-              const looksScanned = /scan|image/i.test(d.filename);
-              if (looksScanned) {
-                return {
-                  ...d,
-                  status: "failed",
-                  error_message:
-                    "No extractable text found — this looks like a scanned, image-only PDF. OCR isn't supported yet; please re-upload a text-based PDF.",
-                };
-              }
-              const estimatedPages = Math.max(1, Math.round(d.size_bytes / 160000));
-              return { ...d, status: "ready", page_count: estimatedPages, error_message: null };
-            }),
-          );
-          delete processingTimers.current[doc.id];
-        }, 2200);
-      }
-    });
-  }, [documents]);
 
   const loadDocuments = React.useCallback(async () => {
     if (!sessionId) {
@@ -243,11 +206,13 @@ export default function Screen() {
     loadHistory();
   }, [loadHistory]);
 
-  function handleFileChange(e) {
+  async function handleFileChange(e) {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
     setUploadIsError(false);
 
+    // Fast local guard only -- the backend remains the source of truth for
+    // what's actually accepted, stored and queued (AC-031).
     const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
     if (!isPdf) {
       rejectUpload(`"${file.name}" isn't a PDF. Only PDF files are supported for this session.`);
@@ -265,21 +230,29 @@ export default function Screen() {
       );
       return;
     }
+    if (!sessionId) return;
 
-    const newDoc = {
-      id: nextId("doc"),
-      filename: file.name,
-      status: "processing",
-      page_count: null,
-      size_bytes: file.size,
-      error_message: null,
-      created_at: new Date().toISOString(),
-      simulated: true,
-    };
-    setDocuments((prev) => [...prev, newDoc]);
-    setUploadIsError(false);
-    setUploadMessage(`"${file.name}" was uploaded and is being processed.`);
-    resetFileInput();
+    setUploading(true);
+    try {
+      // AC-031: a true multipart request to the real upload endpoint -- no
+      // client-only simulated document object.
+      const formData = new FormData();
+      formData.append("file", file);
+      const created = await apiFetch(`/sessions/${sessionId}/documents`, {
+        method: "POST",
+        body: formData,
+      });
+      // AC-032: the new row comes straight from the backend response
+      // (including its real status, e.g. 'processing'), not a local placeholder.
+      setDocuments((prev) => [...prev, created]);
+      setUploadIsError(false);
+      setUploadMessage(`"${file.name}" was uploaded and is being processed.`);
+      resetFileInput();
+    } catch (err) {
+      rejectUpload(err?.detail || `"${file.name}" couldn't be uploaded. Please try again.`);
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function handleAsk(e) {
@@ -474,7 +447,7 @@ export default function Screen() {
                   type="file"
                   accept="application/pdf,.pdf"
                   onChange={handleFileChange}
-                  disabled={documents.length >= MAX_DOCS}
+                  disabled={documents.length >= MAX_DOCS || uploading}
                   className="block w-full text-sm file:mr-3 file:rounded-full file:border-0 file:px-4 file:py-2 file:text-sm file:font-medium focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50"
                   style={{
                     color: brand.neutralColor,

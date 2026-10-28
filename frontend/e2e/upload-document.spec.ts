@@ -3,26 +3,36 @@ import {
   test,
   request as playwrightRequest,
   type APIRequestContext,
+  type Page,
 } from "@playwright/test";
 
-// US-007: Upload a PDF to a chat session (AC-013..AC-016, NFR-006, NFR-007).
+// US-007/US-012: Upload a PDF to a chat session (AC-013..AC-016, NFR-006,
+// NFR-007, plus AC-031/AC-032 wiring).
 //
-// SessionsSessionid.tsx's upload control still validates and tracks files
-// against local component state only -- it does not call POST
-// /sessions/{session_id}/documents or GET /sessions/{session_id}/documents at
-// all (see the screen's own documents state, seeded from INITIAL_DOCUMENTS,
-// and handleFileChange, which never imports or calls apiFetch for uploads).
-// This mirrors the precedent already established in
-// frontend/e2e/ask-question.spec.ts and citations-and-history.spec.ts for the
-// messages endpoints: where a screen is not yet wired to the real API, the
-// criterion is proven through Playwright's `request` API against the live
-// backend the shared webServer boots, exactly as session-isolation.spec.ts
-// already does for its own upload calls. The client-side-only validation
-// behaviour the screen *does* implement today (rejecting a non-PDF, an
-// oversized file, or a sixth file once its local cap is reached, and
-// accepting a valid one) is covered with real DOM rendering in
+// SessionsSessionid.tsx's upload control now calls the real
+// POST /sessions/{session_id}/documents endpoint via apiFetch as a true
+// multipart/form-data request, and renders the Documents table row straight
+// from the backend's JSON response (AC-031/AC-032). The valid-upload case
+// below drives the real rendered <input type="file"> through the UI against
+// the live backend the shared webServer boots. The remaining reject-path
+// cases (AC-014/015/016) are proven at the API layer here, with the
+// client-side pre-check behaviour the screen implements (rejecting a
+// non-PDF, an oversized file, or a sixth file once the local cap is reached)
+// covered with real DOM rendering and a mocked apiFetch in
 // frontend/src/screens/SessionsSessionid.upload.test.tsx.
+//
+// US-013-2: AC-033/AC-034 require proving a *backend* rejection (not just the
+// client-side pre-check) renders the exact backend detail string on the real
+// screen, with no document added. The client-side pre-check short-circuits
+// any file whose declared type/extension obviously fails (AC-014/015/016
+// above), so to reach the server's own validation through the real rendered
+// <input type="file"> the file must pass the client's quick check (a ".pdf"
+// name) while still failing the server's stricter one (actual content-type
+// header sent with the multipart part) -- exactly the "disguised" case the
+// backend's `content_type_is_pdf and extension_is_pdf` check in
+// app/routers/sessions.py exists to catch.
 const API_BASE = process.env.E2E_API_BASE_URL ?? "http://127.0.0.1:8000";
+const AUTH_TOKEN_STORAGE_KEY = "access_token";
 
 const FAKE_PDF = Buffer.from("%PDF-1.4 fake pdf content for e2e test");
 
@@ -73,6 +83,79 @@ async function listDocuments(api: APIRequestContext, token: string, sessionId: s
     headers: { Authorization: `Bearer ${token}` },
   });
 }
+
+async function injectToken(page: Page, token: string): Promise<void> {
+  await page.addInitScript(
+    ([key, value]) => window.localStorage.setItem(key, value),
+    [AUTH_TOKEN_STORAGE_KEY, token],
+  );
+}
+
+test(
+  "[AC-031/AC-032] uploading a valid PDF through the real rendered file input " +
+    "sends a true multipart request and the Documents table shows the new row, " +
+    "sourced from the backend, with status 'processing'",
+  async ({ page }) => {
+    const api = await playwrightRequest.newContext({ baseURL: API_BASE });
+    const token = await signup(api, "ui-upload");
+    const sessionName = `UI Upload ${Date.now()}`;
+    await createSession(api, token, sessionName);
+
+    await injectToken(page, token);
+    await page.goto("/sessions");
+    await page.getByRole("button", { name: new RegExp(`Open session ${sessionName}`) }).click();
+
+    const fileInput = page.locator("#pdf-file-input");
+    await fileInput.setInputFiles({
+      name: "notes.pdf",
+      mimeType: "application/pdf",
+      buffer: FAKE_PDF,
+    });
+
+    await expect(page.getByText(/was uploaded and is being processed/i)).toBeVisible();
+    await expect(page.getByText("notes.pdf", { exact: true })).toBeVisible();
+    await expect(page.getByText("Processing", { exact: true })).toBeVisible();
+
+    await api.dispose();
+  },
+);
+
+test(
+  "[AC-033] a disguised non-PDF (.pdf name, non-PDF content-type) submitted through the " +
+    "real rendered file input is rejected by the live backend with its exact detail " +
+    "message, and no row is added to the Documents table",
+  async ({ page }) => {
+    const api = await playwrightRequest.newContext({ baseURL: API_BASE });
+    const token = await signup(api, "ac033-ui-reject");
+    const sessionName = `UI Reject ${Date.now()}`;
+    const sessionId = await createSession(api, token, sessionName);
+
+    await injectToken(page, token);
+    await page.goto("/sessions");
+    await page.getByRole("button", { name: new RegExp(`Open session ${sessionName}`) }).click();
+
+    // Passes the screen's own quick local check (name ends in ".pdf"), but
+    // the actual bytes/declared content-type are not a PDF, so the live
+    // backend's stricter check (app/routers/sessions.py upload_document)
+    // rejects it with 422 "Only PDF files are supported." -- proving the
+    // *backend's* rejection path renders on-screen, not just the client guard.
+    const fileInput = page.locator("#pdf-file-input");
+    await fileInput.setInputFiles({
+      name: "disguised.pdf",
+      mimeType: "text/plain",
+      buffer: Buffer.from("not actually a pdf"),
+    });
+
+    await expect(page.getByText("Only PDF files are supported.")).toBeVisible();
+    await expect(page.getByText("disguised.pdf", { exact: true })).toHaveCount(0);
+    await expect(page.getByText(/was uploaded and is being processed/i)).toHaveCount(0);
+
+    const listing = await listDocuments(api, token, sessionId);
+    expect(await listing.json()).toEqual([]);
+
+    await api.dispose();
+  },
+);
 
 test(
   "[AC-013] uploading a valid PDF within the size limit is accepted, queued, " +
