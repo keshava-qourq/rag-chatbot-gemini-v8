@@ -21,7 +21,7 @@ Capacity: 20 points · Committed: 15
 
 Enable browsing/switching sessions and uploading validated PDFs into a session.
 
-Capacity: 20 points · Committed: 13
+Capacity: 20 points · Committed: 18
 
 | Key | Type | Title | Points | Role | Depends on |
 |---|---|---|---|---|---|
@@ -31,12 +31,14 @@ Capacity: 20 points · Committed: 13
 | ↳ US-007-T2 | Task | Store accepted PDFs in S3 and persist document metadata | — | backend-agent | — |
 | ↳ US-007-T3 | Task | Enqueue processing job on Redis queue after successful upload | — | backend-agent | — |
 | ↳ US-007-T4 | Task | Implement document list endpoint with per-document status | — | backend-agent | — |
+| US-012 | Story | Wire Upload PDF form to the real upload endpoint | 3 | frontend-agent | — |
+| US-013 | Story | Show real backend errors for rejected uploads | 2 | frontend-agent | — |
 
 ## Sprint 3: Sprint 3
 
 Build the background pipeline that parses, chunks, and embeds uploaded PDFs into pgvector.
 
-Capacity: 20 points · Committed: 13
+Capacity: 20 points · Committed: 19
 
 | Key | Type | Title | Points | Role | Depends on |
 |---|---|---|---|---|---|
@@ -45,12 +47,14 @@ Capacity: 20 points · Committed: 13
 | ↳ US-008-T2 | Task | Integrate gemini-embedding-001 calls to embed chunks | — | integration-agent | — |
 | ↳ US-008-T3 | Task | Persist chunk embeddings into pgvector-backed document_chunks table | — | backend-agent | — |
 | ↳ US-008-T4 | Task | Implement status transitions and failure handling for parse/API errors | — | backend-agent | — |
+| US-014 | Story | Refresh Documents list to reflect real processing status | 3 | frontend-agent | — |
+| US-015 | Story | Run the RQ worker for the 'documents' queue alongside the API in the deployed container | 3 | devops-agent | — |
 
 ## Sprint 4: Sprint 4
 
 Deliver grounded question answering with citations and full persistent chat history.
 
-Capacity: 20 points · Committed: 14
+Capacity: 20 points · Committed: 16
 
 | Key | Type | Title | Points | Role | Depends on |
 |---|---|---|---|---|---|
@@ -61,6 +65,7 @@ Capacity: 20 points · Committed: 14
 | ↳ US-009-T4 | Task | Implement graceful error handling for Gemini failures and missing API key | — | backend-agent | — |
 | US-010 | Story | View source citations for each answer | 3 | frontend-agent | US-009 |
 | US-011 | Story | Retain and view full session chat history | 3 | backend-agent | US-009 |
+| US-016 | Story | End-to-end verification that uploaded PDFs are processed and surfaced correctly | 2 | qa-agent | — |
 
 ## Unscheduled
 

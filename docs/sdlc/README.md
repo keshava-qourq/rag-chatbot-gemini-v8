@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 Build a rag chatbot where user can upload there own documents and ask queries about them use gemini-2.5-flash for answers and gemini-embedding-001 for embeddings and have chat history and sessions
 
-**Documentation version:** v21
+**Documentation version:** v22
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -13,7 +13,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 <!-- sdlc:auto:start contents -->
 | Document | State |
 |---|---|
-| [Requirements](requirements/README.md) | v1 approved |
+| [Requirements](requirements/README.md) | v2 approved |
 | [Architecture](architecture/README.md) | 18 entries |
 | [Development](development/README.md) | 4 entries |
 | [Testing](testing/README.md) | 1 entry |
@@ -30,8 +30,8 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 | [Deployment guide](deployment/deployment-guide.md) | deployed |
 | [Runbook](deployment/runbook.md) | deployed |
 | [Release notes](deployment/release-notes.md) | 9 releases |
-| [Traceability matrix](traceability-matrix.md) | 11 requirements |
-| [Changelog](CHANGELOG.md) | 21 versions |
+| [Traceability matrix](traceability-matrix.md) | 16 requirements |
+| [Changelog](CHANGELOG.md) | 22 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -39,10 +39,15 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 <!-- sdlc:auto:start open-gaps -->
 ### Requirements
 
-- Exact numeric value for the 'per-session document count cap' is not specified anywhere in the input (only that a cap must exist) -- needs a concrete number before design/build.
-- Exact minimum password complexity rules (length, character classes, etc.) are not defined in the input.
-- Numeric value of the per-session document cap is not specified (see REQ-SCOPE gap).
-- No architecture or capacity plan exists yet to confirm this target is achievable.
+- The API keys list includes REDIS_URL, but the Redis service entry specifies only a container image (redis:7-alpine) with no named connection env var — confirm REDIS_URL is in fact the intended connection string variable for that container.
+- Email/SMTP was removed from scope, but no alternative account-recovery (password reset) mechanism is described anywhere in the requirements for US-001/US-002 — this leaves password recovery unspecified and should be confirmed as intentionally deferred.
+- The per-session document count cap is referenced (US-007/AC-016) but no specific numeric cap value is given in this input — needs to be confirmed before implementation/testing.
+- Exact password complexity rules are not specified in this input.
+- No account-recovery/password-reset flow is specified, and email/SMTP is out of scope — recovery path is unresolved.
+- Exact numeric value of the per-session document cap is not given in this input.
+- Input implies an earlier version simulated uploads locally; the requirements do not state why/when that happened — flagged for traceability but not treated as a current conflict.
+- This story implies a prior deployment lacked a running worker, leaving documents stuck in 'processing' — the requirements input does not state when/why that gap existed, only that it's being fixed.
+- This is a verification/testing-oriented story defined at requirements time; no actual test results are included in this input — testing phase should confirm these outcomes once executed.
 
 ### Architecture
 
