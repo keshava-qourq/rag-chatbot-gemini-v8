@@ -275,9 +275,7 @@ def test_ac014_pdf_extension_with_mismatched_content_type_is_rejected() -> None:
     try:
         session_id = _create_session(token, "Reject spoofed session")
 
-        response = _upload(
-            token, session_id, "disguised.pdf", b"actually plain text", "text/plain"
-        )
+        response = _upload(token, session_id, "disguised.pdf", b"actually plain text", "text/plain")
 
         assert response.status_code == 422
         assert "pdf" in response.json()["detail"].lower()
@@ -362,9 +360,7 @@ def test_ac016_upload_beyond_the_per_session_cap_is_rejected_and_nothing_added()
 
         assert _document_count(db, session_id) == MAX_DOCUMENTS_PER_SESSION
 
-        response = _upload(
-            token, session_id, "one-too-many.pdf", FAKE_PDF_BYTES, "application/pdf"
-        )
+        response = _upload(token, session_id, "one-too-many.pdf", FAKE_PDF_BYTES, "application/pdf")
 
         assert response.status_code == 422
         detail = response.json()["detail"].lower()

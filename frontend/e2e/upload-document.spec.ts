@@ -114,53 +114,50 @@ test(
   },
 );
 
-test(
-  "[AC-014] uploading a non-PDF file is rejected with a PDF-only message, nothing stored",
-  async () => {
-    const api = await playwrightRequest.newContext({ baseURL: API_BASE });
-    const token = await signup(api, "non-pdf-upload");
-    const sessionId = await createSession(api, token, `Reject ${Date.now()}`);
+test("[AC-014] uploading a non-PDF file is rejected with a PDF-only message, nothing stored", async () => {
+  const api = await playwrightRequest.newContext({ baseURL: API_BASE });
+  const token = await signup(api, "non-pdf-upload");
+  const sessionId = await createSession(api, token, `Reject ${Date.now()}`);
 
-    const docxResponse = await uploadFile(
-      api,
-      token,
-      sessionId,
-      "report.docx",
-      Buffer.from("not a pdf"),
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    );
-    expect(docxResponse.status()).toBe(422);
-    const docxBody = await docxResponse.json();
-    expect(docxBody.detail.toLowerCase()).toContain("pdf");
+  const docxResponse = await uploadFile(
+    api,
+    token,
+    sessionId,
+    "report.docx",
+    Buffer.from("not a pdf"),
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  );
+  expect(docxResponse.status()).toBe(422);
+  const docxBody = await docxResponse.json();
+  expect(docxBody.detail.toLowerCase()).toContain("pdf");
 
-    const txtResponse = await uploadFile(
-      api,
-      token,
-      sessionId,
-      "notes.txt",
-      Buffer.from("just some notes"),
-      "text/plain",
-    );
-    expect(txtResponse.status()).toBe(422);
-    expect((await txtResponse.json()).detail.toLowerCase()).toContain("pdf");
+  const txtResponse = await uploadFile(
+    api,
+    token,
+    sessionId,
+    "notes.txt",
+    Buffer.from("just some notes"),
+    "text/plain",
+  );
+  expect(txtResponse.status()).toBe(422);
+  expect((await txtResponse.json()).detail.toLowerCase()).toContain("pdf");
 
-    const imageResponse = await uploadFile(
-      api,
-      token,
-      sessionId,
-      "scan.png",
-      Buffer.from("fake png bytes"),
-      "image/png",
-    );
-    expect(imageResponse.status()).toBe(422);
-    expect((await imageResponse.json()).detail.toLowerCase()).toContain("pdf");
+  const imageResponse = await uploadFile(
+    api,
+    token,
+    sessionId,
+    "scan.png",
+    Buffer.from("fake png bytes"),
+    "image/png",
+  );
+  expect(imageResponse.status()).toBe(422);
+  expect((await imageResponse.json()).detail.toLowerCase()).toContain("pdf");
 
-    const listing = await listDocuments(api, token, sessionId);
-    expect(await listing.json()).toEqual([]);
+  const listing = await listDocuments(api, token, sessionId);
+  expect(await listing.json()).toEqual([]);
 
-    await api.dispose();
-  },
-);
+  await api.dispose();
+});
 
 test(
   "[AC-015] uploading a PDF larger than the ~20MB limit is rejected with the " +
