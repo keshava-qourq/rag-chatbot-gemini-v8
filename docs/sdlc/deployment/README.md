@@ -3,16 +3,18 @@
 > Maintained by QuorQ AI SDLC. Text between `sdlc:auto` markers is regenerated; anything outside them is yours and is kept.
 
 <!-- sdlc:auto:start narrative -->
-### DEPLOY-24ac3536 · approved · source: deployment:24ac353600c1
+### DEPLOY-720e1a070505 · approved · source: deployment:720e1a070505
 
-Rag_chatbot_gemini_v8 is live at version 24ac353600c1, with separate frontend and backend endpoints deployed.
+The RAG chatbot application (version 720e1a070505) is live in production, with separate frontend and backend endpoints deployed.
 
-Deployment record states Status: live, Version: 24ac353600c1. Frontend is hosted at https://p5b327a9dbdb3.d3j61xaup4zgrx.amplifyapp.com (AWS Amplify). Backend is hosted at https://35-155-27-11.sslip.io/apps/5b327a9dbdb3/. No deployment date, deploying actor, release notes, or list of included requirements/features was provided in the input.
+Deployment status: live. Version identifier: 720e1a070505. Frontend hosted at https://p5b327a9dbdb3.d3j61xaup4zgrx.amplifyapp.com (appears to be AWS Amplify). Backend hosted at https://35-155-27-11.sslip.io/apps/5b327a9dbdb3/ (appears to be a containerized or reverse-proxy deployment via sslip.io). No deployment date, deploying agent/human, approval record, or release notes were provided. Related_ids link to all known requirement keys since no input specifies which requirements this deployment covers specifically.
 
-- ⚠ No deployment date/timestamp recorded.
-- ⚠ No indication of who approved or triggered this deployment.
-- ⚠ No release notes or changelog linking this version to specific requirements (US-001..US-011) or development tickets.
-- ⚠ No environment details (e.g., staging vs production, region, infra config) provided.
-- ⚠ No rollback plan or prior version reference provided to assess what changed in this release.
-- ⚠ No post-deployment verification/test results (smoke tests, health checks) recorded.
+**Related:** US-001, US-002, US-003, US-004, US-005, US-006, US-007, US-008, US-009, US-010, US-011
+
+- ⚠ No deployment date recorded.
+- ⚠ No approver or responsible party recorded for this release.
+- ⚠ No indication of which specific requirements/features (US-001 through US-011) are included in this version -- all are tentatively linked pending confirmation.
+- ⚠ No rollback plan, infrastructure/environment details (e.g. region, scaling config), or CI/CD pipeline information provided.
+- ⚠ No post-deployment validation, smoke test, or monitoring results recorded.
+- ⚠ No confirmation of database/vector store or secrets configuration for the live environment.
 <!-- sdlc:auto:end narrative -->

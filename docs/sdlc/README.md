@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 Build a rag chatbot where user can upload there own documents and ask queries about them use gemini-2.5-flash for answers and gemini-embedding-001 for embeddings and have chat history and sessions
 
-**Documentation version:** v12
+**Documentation version:** v13
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -29,9 +29,9 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 | [Tests](testing/test-cases.md) | 0 tests |
 | [Deployment guide](deployment/deployment-guide.md) | deployed |
 | [Runbook](deployment/runbook.md) | deployed |
-| [Release notes](deployment/release-notes.md) | 4 releases |
+| [Release notes](deployment/release-notes.md) | 5 releases |
 | [Traceability matrix](traceability-matrix.md) | 11 requirements |
-| [Changelog](CHANGELOG.md) | 12 versions |
+| [Changelog](CHANGELOG.md) | 13 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -65,12 +65,12 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 
 ### Deployment
 
-- No deployment date/timestamp recorded.
-- No indication of who approved or triggered this deployment.
-- No release notes or changelog linking this version to specific requirements (US-001..US-011) or development tickets.
-- No environment details (e.g., staging vs production, region, infra config) provided.
-- No rollback plan or prior version reference provided to assess what changed in this release.
-- No post-deployment verification/test results (smoke tests, health checks) recorded.
+- No deployment date recorded.
+- No approver or responsible party recorded for this release.
+- No indication of which specific requirements/features (US-001 through US-011) are included in this version -- all are tentatively linked pending confirmation.
+- No rollback plan, infrastructure/environment details (e.g. region, scaling config), or CI/CD pipeline information provided.
+- No post-deployment validation, smoke test, or monitoring results recorded.
+- No confirmation of database/vector store or secrets configuration for the live environment.
 
 ### Maintenance
 
