@@ -18,12 +18,12 @@ import redis
 from rq import Queue
 from rq.exceptions import DuplicateJobError
 from sqlalchemy.orm import Session
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from app.config import GEMINI_API_KEY, REDIS_URL
 from app.database import SessionLocal
 from app.document_processing import CorruptedPDFError, NoExtractableTextError, chunk_pdf_bytes
-from app.models import Document, DocumentChunk, EMBEDDING_DIM
+from app.models import EMBEDDING_DIM, Document, DocumentChunk
 from app.storage import load
 
 logger = logging.getLogger(__name__)
@@ -68,7 +68,6 @@ def _gemini_client():
 
 
 @retry(
-    retry=retry_if_exception_type(Exception),
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=1, max=4),
     reraise=True,
@@ -159,7 +158,9 @@ def process_document(document_id: str) -> None:
         try:
             vectors = _embed_chunks(client, chunks)
         except EmbeddingCallError as exc:
-            logger.exception("Document %s: embedding call failed after retries: %s", document_id, exc)
+            logger.exception(
+                "Document %s: embedding call failed after retries: %s", document_id, exc
+            )
             _mark_failed(
                 db,
                 doc,
@@ -188,7 +189,9 @@ def process_document(document_id: str) -> None:
         try:
             doc = db.get(Document, uuid.UUID(document_id))
             if doc is not None and doc.status not in ("ready", "failed"):
-                _mark_failed(db, doc, "An unexpected error occurred while processing this document.")
+                _mark_failed(
+                    db, doc, "An unexpected error occurred while processing this document."
+                )
         except Exception:  # noqa: BLE001 -- do not let the safety net itself crash the worker
             logger.exception("Failed to mark document %s as failed", document_id)
     finally:
