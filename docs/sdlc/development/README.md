@@ -5,79 +5,59 @@
 <!-- sdlc:auto:start narrative -->
 ### DEV-PLAN-001 · approved · source: plan:v1
 
-Development plan version 1 is approved, organized into 4 sprints of capacity 20 each, covering 5 epics and all 11 known user stories.
+Development plan version 1 was approved, organizing the project into 4 sprints of capacity 20 each, covering 5 epics and 11 user stories with detailed sub-tasks for the PDF processing and RAG QA epics.
 
-Plan status: approved, version 1. Sprint breakdown: Sprint 1 -- 'Stand up authentication, per-user authorization, and the ability to create a chat session' (capacity 20); Sprint 2 -- 'Enable browsing/switching sessions and uploading validated PDFs into a session' (capacity 20); Sprint 3 -- 'Build the background pipeline that parses, chunks, and embeds uploaded PDFs into pgvector' (capacity 20); Sprint 4 -- 'Deliver grounded question answering with citations and full persistent chat history' (capacity 20).
+Sprint 1 goal: stand up authentication, per-user authorization, and chat session creation (items: EPIC-001, US-001 Sign up, US-002 Log in, US-003 Log out, US-004 Private isolated workspace). Sprint 2 goal: enable browsing/switching sessions and uploading validated PDFs into a session (items: EPIC-002, US-005 Create chat session, US-006 View/switch sessions, EPIC-003, US-007 Upload PDF with sub-tasks US-007-T1 upload endpoint with type/size/count validation, US-007-T2 store PDFs in S3 and persist metadata, US-007-T3 enqueue Redis processing job, US-007-T4 document list endpoint with per-document status). Sprint 3 goal: build the background pipeline that parses, chunks, and embeds uploaded PDFs into pgvector (item: US-008 with sub-tasks US-008-T1 text extraction/page-aware chunking, US-008-T2 gemini-embedding-001 integration, US-008-T3 persist embeddings into pgvector document_chunks table, US-008-T4 status transitions/failure handling). Sprint 4 goal: deliver grounded QA with citations and full persistent chat history (items: EPIC-004, US-009 Ask question scoped to session documents with sub-tasks US-009-T1 similarity search restricted to ready documents, US-009-T2 gemini-2.5-flash grounded generation, US-009-T3 handle no-ready-documents/no-relevant-content without fabrication, US-009-T4 graceful error handling for Gemini failures/missing API key; US-010 View source citations; EPIC-005, US-011 Retain/view full session chat history). Points: US-001=3, US-002=3, US-003=2, US-004=5, US-005=2, US-006=5, US-007=8, US-008=13, US-009=8, US-010=3, US-011=3.
 
 **Related:** US-001, US-002, US-003, US-004, US-005, US-006, US-007, US-008, US-009, US-010, US-011
 
-- ⚠ No explicit sprint-to-story assignment table was given; sprint-to-story mapping below is inferred from sprint goal text matching story content, not an authoritative field in the input.
+- ⚠ Epics (EPIC-001 through EPIC-005) have no assigned role/owner recorded.
+- ⚠ Plan does not state who approved version 1 or when.
 
-### EPIC-001 · approved · source: plan:EPIC-001
+### DEV-US-009 · draft · source: dev:US-009
 
-User Accounts & Authentication epic: sign up, log in, log out, and per-user isolated workspace. Mapped to Sprint 1's authentication/authorization goal.
+The ticket for 'Ask a question scoped to the active session's documents' was marked skipped in the development run, with no associated commit.
 
-Stories: US-001 Sign up with email and password (3 pts, backend-agent); US-002 Log in with email and password (3 pts, backend-agent); US-003 Log out of the application (2 pts, backend-agent); US-004 Private, isolated workspace per user (5 pts, security-agent). No sub-tasks were listed for these stories in the input, and no epic-level point total or owning role was provided.
+Development run status lists US-009 status=skipped, commit=(none). No reason for skipping was provided. Sub-tasks US-009-T1 through US-009-T4 defined in the plan (similarity search, gemini-2.5-flash integration, no-content handling, error handling) have no individual status reported.
 
-**Related:** US-001, US-002, US-003, US-004
+**Related:** US-009, US-009-T1, US-009-T2, US-009-T3, US-009-T4
 
-- ⚠ Epic has no assigned role or point total in the input.
-- ⚠ No implementation tasks (T1, T2, ...) were broken out for US-001–US-004, unlike later epics -- unclear if this is intentional or missing.
-- ⚠ No delivery/ticket status reported for US-001, US-002, US-003, or US-004.
+- ⚠ Reason the ticket was skipped is not stated.
+- ⚠ No commit exists for this ticket, so it is unclear whether any of US-009-T1–T4 were implemented.
+- ⚠ Status of sub-tasks US-009-T1 through US-009-T4 not individually reported.
 
-### EPIC-002 · approved · source: plan:EPIC-002
+### DEV-US-010 · draft · source: dev:US-010
 
-Chat Session Management epic: create and switch between chat sessions. Spans Sprint 1 (session creation) and Sprint 2 (browsing/switching).
+The ticket for 'View source citations for each answer' was marked skipped in the development run, with no associated commit.
 
-Stories: US-005 Create a new chat session (2 pts, backend-agent); US-006 View and switch between my sessions (5 pts, frontend-agent). No sub-tasks were listed for either story, and no epic-level point total or owning role was provided.
+Development run status lists US-010 status=skipped, commit=(none). No reason for skipping was provided. This story depends functionally on US-009 (grounded QA), which was also skipped.
 
-**Related:** US-005, US-006
+**Related:** US-010, US-009
 
-- ⚠ Epic has no assigned role or point total in the input.
-- ⚠ No implementation tasks were broken out for US-005/US-006.
-- ⚠ No delivery/ticket status reported for US-005 or US-006.
+- ⚠ Reason the ticket was skipped is not stated.
+- ⚠ No commit exists for this ticket.
+- ⚠ Dependency on US-009 (also skipped) suggests citations feature cannot function without the underlying QA pipeline; this blocking relationship is not explicitly confirmed by the input.
 
-### EPIC-003 · approved · source: plan:EPIC-003
+### DEV-US-011 · draft · source: dev:US-011
 
-PDF Upload & Processing epic: validated PDF upload into a session (Sprint 2) and the background parse/chunk/embed pipeline into pgvector (Sprint 3).
+The ticket for 'Retain and view full session chat history' was marked skipped in the development run, with no associated commit.
 
-US-007 Upload a PDF to a chat session (8 pts, backend-agent) breaks into: T1 upload endpoint with type/size/count validation; T2 store accepted PDFs in S3 and persist document metadata; T3 enqueue processing job on Redis queue after successful upload; T4 document list endpoint with per-document status. US-008 Parse, chunk, and embed uploaded PDFs (13 pts, backend-agent) breaks into: T1 PDF text extraction and page-aware chunking in worker; T2 integrate gemini-embedding-001 to embed chunks (integration-agent); T3 persist chunk embeddings into pgvector-backed document_chunks table; T4 status transitions and failure handling for parse/API errors. Per the development run report, US-008 is the only story in this epic (and in the whole plan) confirmed delivered, via commit 0d869fb8851066b8d0646d321b110f2c669942d5.
-
-**Related:** US-007, US-008
-
-- ⚠ No delivery/ticket status reported for US-007 or any of its sub-tasks (T1–T4), despite US-008 (which logically depends on uploads existing) being marked delivered -- potential sequencing discrepancy worth flagging to the team.
-- ⚠ Epic has no assigned role or point total in the input.
-
-### EPIC-004 · approved · source: plan:EPIC-004
-
-Retrieval-Augmented Question Answering epic: scoped similarity search, Gemini-grounded generation, and citation display. Mapped to Sprint 4.
-
-US-009 Ask a question scoped to the active session's documents (8 pts, backend-agent) breaks into: T1 similarity search restricted to session's ready documents; T2 integrate gemini-2.5-flash generation grounded in retrieved chunks (integration-agent); T3 handle no-ready-documents and no-relevant-content cases without fabricating answers; T4 graceful error handling for Gemini failures and missing API key. US-010 View source citations for each answer (3 pts, frontend-agent) has no sub-tasks listed.
-
-**Related:** US-009, US-010
-
-- ⚠ No delivery/ticket status reported for US-009, US-010, or US-009's sub-tasks.
-- ⚠ Epic has no assigned role or point total in the input.
-
-### EPIC-005 · approved · source: plan:EPIC-005
-
-Chat History epic: retain and view full session chat history. Mapped to Sprint 4.
-
-Story: US-011 Retain and view full session chat history (3 pts, backend-agent). No sub-tasks were listed, and no epic-level point total or owning role was provided.
+Development run status lists US-011 status=skipped, commit=(none). No reason for skipping was provided.
 
 **Related:** US-011
 
-- ⚠ No delivery/ticket status reported for US-011.
-- ⚠ Epic has no assigned role or point total in the input.
+- ⚠ Reason the ticket was skipped is not stated.
+- ⚠ No commit exists for this ticket, so chat history persistence/view functionality cannot be confirmed as built.
 
-### DEV-RUN-STATUS · draft · source: dev:run-status
+### DEV-RUN-SUMMARY · draft · source: dev:run-status
 
-The development run is reported as 'completed' overall, but only one ticket result (US-008) was included in the input.
+The development run is marked 'completed' overall, but its ticket list only accounts for 3 of the 11 planned stories (US-009, US-010, US-011), all of which are skipped with no commits.
 
-Development run status: completed. Only ticket reported: US-008 'Parse, chunk, and embed uploaded PDFs' -- status=delivered, commit=0d869fb8851066b8d0646d321b110f2c669942d5.
+Development run status field reads 'completed', yet the only tickets reported are US-009, US-010, and US-011, each with status=skipped and commit=(none). No tickets are listed for US-001 (Sign up), US-002 (Log in), US-003 (Log out), US-004 (Private workspace), US-005 (Create session), US-006 (View/switch sessions), US-007 (Upload PDF, incl. sub-tasks T1-T4), or US-008 (Parse/chunk/embed PDFs, incl. sub-tasks T1-T4).
 
-**Related:** US-008
+**Related:** US-009, US-010, US-011
 
-- ⚠ Discrepancy: run status is 'completed' but delivery evidence (ticket status + commit) was only supplied for US-008; no ticket records were given for US-001 through US-007, US-009, US-010, or US-011, so their completion cannot be confirmed from this input.
-- ⚠ No date/timestamp was provided for the run or for the US-008 delivery.
+- ⚠ Discrepancy: run status says 'completed' but all reported tickets are 'skipped' with no commits -- unclear what 'completed' refers to.
+- ⚠ No development status recorded for US-001 through US-008 or their sub-tasks (US-007-T1–T4, US-008-T1–T4) in this phase input; it is unknown whether they were implemented, are pending, or were omitted from this report.
+- ⚠ No commits are recorded anywhere in this development run, so no code artifacts can be traced to any requirement.
 <!-- sdlc:auto:end narrative -->
