@@ -7,10 +7,7 @@
 
 **Commit:** `5346857`
 
-**Delivered:**
-- US-009: Ask a question scoped to the active session's documents
-- US-010: View source citations for each answer
-- US-011: Retain and view full session chat history
+_Nothing delivered in this window._
 
 ## 720e1a070505 — 2026-10-28
 

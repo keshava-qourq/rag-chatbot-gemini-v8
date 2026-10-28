@@ -16,6 +16,13 @@ _No unit-test run yet._
 | Step | Status | Ticket | Finished |
 |---|---|---|---|
 | run_checks | succeeded | — | 2026-10-28 |
+| write_tests | succeeded | US-009 | 2026-10-28 |
+
+### Sprint 4
+
+| Step | Status | Ticket | Finished |
+|---|---|---|---|
+| run_checks | succeeded | — | 2026-10-28 |
 
 ### Sprint 3
 

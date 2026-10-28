@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 Build a rag chatbot where user can upload there own documents and ask queries about them use gemini-2.5-flash for answers and gemini-embedding-001 for embeddings and have chat history and sessions
 
-**Documentation version:** v15
+**Documentation version:** v16
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -15,7 +15,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 |---|---|
 | [Requirements](requirements/README.md) | v1 approved |
 | [Architecture](architecture/README.md) | 18 entries |
-| [Development](development/README.md) | 10 entries |
+| [Development](development/README.md) | 5 entries |
 | [Testing](testing/README.md) | 1 entry |
 | [Deployment](deployment/README.md) | 1 entry |
 | [Maintenance](maintenance/README.md) | 1 entry |
@@ -31,7 +31,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 | [Runbook](deployment/runbook.md) | deployed |
 | [Release notes](deployment/release-notes.md) | 6 releases |
 | [Traceability matrix](traceability-matrix.md) | 11 requirements |
-| [Changelog](CHANGELOG.md) | 15 versions |
+| [Changelog](CHANGELOG.md) | 16 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -51,19 +51,14 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 
 ### Development
 
-- Input lists sprints and backlog items separately with no explicit field mapping which item belongs to which sprint; mapping used in epic-level entries below is inferred from goal text and epic grouping, not stated directly.
-- No development-run ticket status reported for US-001, US-002, US-003, or US-004 despite the dev run being marked 'completed' -- unclear whether these were implemented.
-- No development-run ticket status reported for US-005 or US-006 despite the dev run being marked 'completed' -- unclear whether these were implemented.
-- No development-run ticket status reported for US-007, US-008, or any of their sub-tasks (T1-T4 each) despite the dev run being marked 'completed' -- unclear whether the upload flow or embedding pipeline were implemented.
-- US-010 (citations) was recorded in the dev run as skipped with no commit -- reason not stated in input.
-- No individual task-level (T1-T4) status reported for US-009 beyond the overall story being marked delivered.
-- US-011 (persistent chat history) was recorded in the dev run as skipped with no commit -- reason not stated in input. This directly affects the project's stated goal of 'having chat history and sessions'.
-- Discrepancy: the run is marked 'completed' but 8 of 11 planned stories (US-001-US-008) have no reported ticket status -- unclear if they were built, not attempted, or simply omitted from this input.
-- No task-level (Txx) ticket statuses were reported for any story.
-- Only story-level delivery is confirmed; individual sub-task (T1-T4) completion was not separately reported.
-- Reason for skipping not provided in input.
-- Citation display functionality should not be assumed to exist in the built application.
-- Persistent chat history should not be assumed to exist in the built application, despite being a core part of the project description.
+- Epics (EPIC-001 through EPIC-005) have no assigned role/owner recorded in the plan.
+- Plan does not state who approved version 1 or on what date.
+- The commit hash recorded for US-009 (0886b2162d958978b854135663937aadf5774199) is identical to the commit hash recorded for US-011 -- flagged as a possible data discrepancy since they are different tickets.
+- No per-task (T1-T4) delivery confirmation was provided, only story-level status.
+- No implementation detail (e.g. which UI elements display citations) was provided beyond the delivered status and commit.
+- The commit hash recorded for US-011 is identical to the one recorded for US-009 -- flagged as a possible data discrepancy since they are different tickets and this may indicate a reporting error or a combined commit covering both.
+- Development run status is reported as 'completed', but only 3 of 11 planned stories (US-009, US-010, US-011) have ticket delivery records -- status for US-001 through US-008 is unknown/unreported, which is inconsistent with a 'completed' run.
+- Cannot confirm whether these 8 stories were built, partially built, or not started.
 
 ### Testing
 
