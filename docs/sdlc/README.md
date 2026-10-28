@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 Build a rag chatbot where user can upload there own documents and ask queries about them use gemini-2.5-flash for answers and gemini-embedding-001 for embeddings and have chat history and sessions
 
-**Documentation version:** v19
+**Documentation version:** v20
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -15,7 +15,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 |---|---|
 | [Requirements](requirements/README.md) | v1 approved |
 | [Architecture](architecture/README.md) | 18 entries |
-| [Development](development/README.md) | 12 entries |
+| [Development](development/README.md) | 4 entries |
 | [Testing](testing/README.md) | 1 entry |
 | [Deployment](deployment/README.md) | 1 entry |
 | [Maintenance](maintenance/README.md) | 1 entry |
@@ -31,7 +31,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 | [Runbook](deployment/runbook.md) | deployed |
 | [Release notes](deployment/release-notes.md) | 8 releases |
 | [Traceability matrix](traceability-matrix.md) | 11 requirements |
-| [Changelog](CHANGELOG.md) | 19 versions |
+| [Changelog](CHANGELOG.md) | 20 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -51,15 +51,14 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 
 ### Development
 
-- Commit hash for US-002 is 41 characters, one longer than a standard 40-character SHA-1 hash -- possible transcription issue in the source input.
-- US-003 and US-004 share the identical commit hash; confirm whether this is a single combined commit or a data entry duplication.
-- Commit hash is identical across US-003, US-004, and US-005; confirm whether these were genuinely a single combined commit.
-- Development run status is 'completed' but no ticket entry exists for US-006 in the input; actual delivery status is unknown.
-- Development run status is 'completed' but no ticket entry exists for US-007 or its sub-tasks (T1-T4); actual delivery status is unknown.
-- Development run status is 'completed' but no ticket entry exists for US-008 or its sub-tasks (T1-T4); actual delivery status, including whether gemini-embedding-001 integration works, is unknown.
-- Development run status is 'completed' but no ticket entry exists for US-009 or its sub-tasks (T1-T4); actual delivery status, including whether gemini-2.5-flash grounding works, is unknown.
-- Development run status is 'completed' but no ticket entry exists for US-010 in the input; actual delivery status is unknown.
-- Development run status is 'completed' but no ticket entry exists for US-011 in the input; actual delivery status is unknown.
+- Epics (EPIC-001 through EPIC-005) have no assigned role or point estimate recorded.
+- Plan defines scope and ownership but contains no completion/status field per item -- actual delivery must be cross-checked against the development run log.
+- No test or QA evidence accompanies this delivery record -- confirm via testing phase before treating as fully verified.
+- Sub-tasks US-007-T1 through US-007-T4 have no individual status reported -- only the parent story ticket is confirmed delivered.
+- No test or QA evidence accompanies this delivery record.
+- Discrepancy: run status says 'completed' while 9 of 11 planned stories have no recorded ticket outcome -- confirm whether these were actually implemented, are pending, or were simply omitted from this report.
+- No commit references exist for US-001, US-002, US-003, US-004, US-005, US-008, US-009, US-010, or US-011.
+- No sub-task-level status for US-008-T1..T4 or US-009-T1..T4, which are critical to the embedding pipeline and grounded QA functionality.
 
 ### Testing
 

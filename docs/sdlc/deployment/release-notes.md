@@ -46,9 +46,7 @@ _Nothing delivered in this window._
 
 **Commit:** `e28177f`
 
-**Delivered:**
-- US-006: View and switch between my sessions
-- US-007: Upload a PDF to a chat session
+_Nothing delivered in this window._
 
 ## 2ed7625ea79e — 2026-10-28
 
