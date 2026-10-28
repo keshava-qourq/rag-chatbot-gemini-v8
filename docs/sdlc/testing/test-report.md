@@ -11,6 +11,13 @@ _No unit-test run yet._
 <!-- sdlc:auto:end unit -->
 
 <!-- sdlc:auto:start dev-checks -->
+### Sprint 1
+
+| Step | Status | Ticket | Finished |
+|---|---|---|---|
+| run_checks | succeeded | — | 2026-10-28 |
+| write_tests | succeeded | US-004 | 2026-10-28 |
+
 ### Sprint 4
 
 | Step | Status | Ticket | Finished |

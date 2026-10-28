@@ -7,93 +7,86 @@ _Up to date._
 <!-- sdlc:auto:end status -->
 
 <!-- sdlc:auto:start source -->
-Generated from commit `7d484e0` · model `auto`
+Generated from commit `56d324c` · model `auto`
 <!-- sdlc:auto:end source -->
 
 <!-- sdlc:auto:start overview -->
-Rag_chatbot_gemini_v8 is a two-part generated project: a FastAPI 0.115 backend implementing auth, chat sessions, PDF document upload and RAG-based Q&A (using Gemini for embeddings and answers, with Postgres/pgvector as the target store and a SQLite fallback for local dev), and a Vite + React 19 single-page frontend whose approved screens currently render seeded sample data rather than calling the real API. The backend persists users, sessions, documents, document chunks (with vector embeddings), messages and citations via SQLAlchemy models, migrated with Alembic, and queues document processing (rq) backed by Redis. The frontend is a separate npm project with its own build, lint, test and e2e tooling.
+Rag_chatbot_gemini_v8 is a two-part generated application: a FastAPI backend that lets authenticated users create chat sessions, upload PDF documents, and ask questions answered by Gemini (gemini-2.5-flash) grounded in embeddings (gemini-embedding-001) stored via pgvector, and a Vite + React 19 SPA frontend with screens for signup/login, session listing, and a per-session chat view. The backend persists users, sessions, documents, chunks, messages and citations through SQLAlchemy models (cross-dialect UUID/Vector types so the same models work on SQLite or Postgres), uses Alembic for schema migrations, JWT auth with a server-side revocation list for logout, S3-style document storage, and an RQ/Redis job queue for background document processing. The frontend currently ships as an approved, generated UI wired against seeded sample data via `src/lib/api.ts`, pointing at the backend's REST endpoints.
 <!-- sdlc:auto:end overview -->
 
 <!-- sdlc:auto:start prerequisites -->
-- Python 3.12
-- Node.js (for Vite 6 / React 19 / Vitest 2 toolchain)
+- Python 3.12 (matches backend/Dockerfile base image)
+- Node.js and npm (for the Vite/React 19 frontend)
 - pip
-- npm
-- Docker and docker-compose (optional, for local Postgres + Redis)
-- PostgreSQL 16 with the pgvector extension (for real vector search; SQLite is used otherwise)
+- Docker and Docker Compose (for the optional Postgres + Redis services in docker-compose.yml)
 <!-- sdlc:auto:end prerequisites -->
 
 <!-- sdlc:auto:start setup -->
-1. Clone the repository
+1. cp .env.example .env and fill in required values (see ENVIRONMENT.md / backend/app/config.py for what's read)
 2. cd backend && pip install -r requirements.txt
-3. Copy .env.example to .env and fill in values the deployment uses (e.g. DATABASE_URL, Gemini/AWS credentials) -- backend/app/database.py defaults DATABASE_URL to a local sqlite:///./app.db if unset
-4. (Optional) docker-compose up -d to start local Postgres (db) and Redis (redis-queue) containers
-5. cd backend && alembic upgrade head (applies migrations, including enabling the pgvector extension, when running against Postgres)
-6. cd backend && uvicorn app.main:app --reload (also runs Base.metadata.create_all as a safety net on top of migrations)
-7. cd frontend && npm install
-8. cd frontend && npm run dev
+3. (optional, for Postgres/Redis instead of the SQLite/no-queue defaults) from the repo root: docker compose up -d
+4. (optional, when using a real database) cd backend && alembic upgrade head -- otherwise app.main's create_all builds the schema automatically on first run against the default SQLite app.db
+5. cd backend && uvicorn app.main:app --reload
+6. In a separate shell: cd frontend && npm install
+7. cd frontend && npm run dev
 <!-- sdlc:auto:end setup -->
 
 <!-- sdlc:auto:start run -->
 | Name | Command | Description |
 |---|---|---|
-| backend dev server | `cd backend && uvicorn app.main:app --reload` | Runs the FastAPI app with auto-reload; serves /health and the auth/sessions routers |
-| backend migrate | `cd backend && alembic upgrade head` | Applies database migrations (idempotent); also run automatically by the Docker image on container start |
-| frontend dev server | `cd frontend && npm run dev` | Starts the Vite dev server for the React SPA |
-| frontend build | `cd frontend && npm run build` | Bundles the frontend for deployment (does not typecheck) |
-| frontend preview | `cd frontend && npm run preview` | Serves the production build locally |
-| local services | `docker-compose up -d` | Starts local Postgres (db) and Redis (redis-queue) containers used by the backend |
+| backend dev | `cd backend && uvicorn app.main:app --reload` | Runs the FastAPI app with auto-reload; serves /health, /auth/*, and /sessions/* routes. |
+| backend infra | `docker compose up -d` | Starts Postgres 16 (db) and Redis 7 (redis-queue) containers defined in docker-compose.yml. |
+| frontend dev | `cd frontend && npm run dev` | Starts the Vite dev server for the React SPA. |
+| frontend build | `cd frontend && npm run build` | Bundles the frontend for deployment (vite build); does not typecheck. |
+| frontend preview | `cd frontend && npm run preview` | Serves the production build locally for manual checking or e2e tests. |
 <!-- sdlc:auto:end run -->
 
 <!-- sdlc:auto:start structure -->
 | Path | Purpose |
 |---|---|
-| `backend/app` | FastAPI application: entrypoint (main.py), config, database/session setup, SQLAlchemy models, Pydantic schemas, security/auth helpers, RAG logic, document processing, job queueing, storage, and routers/ |
-| `backend/app/routers` | HTTP route modules: auth.py (signup/login/logout) and sessions.py (sessions, documents, messages) |
-| `backend/alembic` | Alembic migration environment and versioned schema migrations (including enabling the pgvector extension) |
-| `backend/tests` | Pytest unit and integration tests (health check, models, security, storage, auth signup) |
-| `backend/scripts` | Operational scripts, e.g. check_connections.py |
-| `frontend/src` | React application source: screens, shared lib (API client, UI/icon vocabulary, brand tokens), app shell and routes |
-| `frontend/src/screens` | One module per approved screen (Signup, Login, Sessions, SessionsSessionid) |
-| `frontend/src/lib` | Shared frontend utilities: api.ts (API client/base URL), ui.tsx, icons.tsx, brand.ts, navigate.ts |
-| `frontend/e2e` | Playwright end-to-end specs run against a locally served app or a deployed URL |
-| `.github/workflows` | CI/CD: deploy.yml builds/pushes the backend image and deploys the frontend via AWS Amplify on push/PR to main |
-| `.quorq` | Platform metadata (handoff/prepared state) used by the Quorq AI SDLC platform |
+| `backend/` | FastAPI service: app code, Alembic migrations, tests, and scripts. |
+| `backend/app/` | Application package: config, database, models, schemas, routers, security, RAG logic, storage, jobs. |
+| `backend/app/routers/` | FastAPI routers (auth.py, sessions.py) implementing the API spec's endpoints. |
+| `backend/alembic/` | Alembic migration environment and versioned schema migrations (including enabling the pgvector extension). |
+| `backend/tests/` | Pytest unit and integration tests (backend/tests/integration/ for auth, sessions, messages, isolation). |
+| `backend/scripts/` | Operational scripts, e.g. check_connections.py. |
+| `frontend/` | Vite + React 19 SPA: approved screens, component library, and e2e tests. |
+| `frontend/src/` | App source: screens, lib (api client, auth, UI/icon vocabulary, brand tokens), entrypoints. |
+| `frontend/src/screens/` | One module per approved screen (Signup, Login, Sessions, SessionsSessionid) with colocated tests. |
+| `frontend/e2e/` | Playwright acceptance test specs run against a locally served app or a deployed URL. |
+| `.github/workflows/` | CI/CD: deploy.yml builds/pushes the backend image and deploys the frontend via AWS Amplify. |
 <!-- sdlc:auto:end structure -->
 
 <!-- sdlc:auto:start conventions -->
-- One FastAPI router per architecture component that owns endpoints (auth.py, sessions.py), included in app/main.py
-- One SQLAlchemy model per approved data-model entity in app/models.py, kept in step with the Alembic 0001 migration
-- UUID primary keys via cross-dialect sqlalchemy.Uuid (not postgresql.UUID) so models work on both Postgres and the SQLite fallback
-- Pydantic schemas in app/schemas.py mirror models 1:1, with `from_attributes` config and id fields stringified via field_validator
-- Un-implemented routes return a typed StubResponse rather than raising, so OpenAPI stays complete and the app stays startable before handlers are written
-- Resource ownership enforced via a shared get_owned_or_404 helper (app/ownership.py) scoped to get_current_user
-- JWT auth with server-side logout via a RevokedToken blocklist checked by get_current_user/get_current_token_payload
-- Backend runs as a non-root user in Docker, with migrations applied on container boot before uvicorn starts
-- Frontend screens are generated per approved design and currently render seeded sample data; app/lib/api.ts is the seam for wiring real API calls
-- Frontend build-time env vars (VITE_API_BASE_URL, VITE_API_SECRET_KEY) are inlined by Vite and provided by CI at deploy time
+- One FastAPI router per architecture component that owns endpoints (auth.py, sessions.py), registered in app/main.py.
+- Pydantic request/response schemas are paired per entity in app/schemas.py, with UUID fields stringified via field_validator.
+- SQLAlchemy models use dialect-agnostic sqlalchemy.Uuid and pgvector.sqlalchemy.Vector so the same models run against SQLite (dev/e2e default) or Postgres (production).
+- Ownership checks for session-scoped resources go through the shared app/ownership.get_owned_or_404 helper.
+- JWT auth: access tokens created in app/security.py; logout inserts the token's jti into RevokedToken, checked by app/deps.get_current_user.
+- Backend tests are split into tests/ (unit, e.g. test_models.py, test_security.py) and tests/integration/ (endpoint-level flows).
+- Frontend component tests live beside the component/screen they cover (e.g. Login.tsx + Login.test.tsx); Playwright e2e specs live separately in frontend/e2e/.
+- Frontend API access is centralized in src/lib/api.ts (apiFetch), which attaches the bearer token and clears it on a 401 with an existing token.
 <!-- sdlc:auto:end conventions -->
 
 <!-- sdlc:auto:start testing -->
 | Name | Command | Description |
 |---|---|---|
-| backend tests | `cd backend && pytest` | Runs pytest unit/integration tests (health, models, security, storage, auth signup) using pythonpath=. from pytest.ini |
-| backend lint | `cd backend && ruff check .` | Lints the backend Python code |
-| backend format check | `cd backend && ruff format .` | Formats backend Python code per ruff.toml |
-| frontend unit tests | `cd frontend && npm test` | Runs Vitest component tests under src/ with jsdom |
-| frontend lint | `cd frontend && npm run lint` | Runs ESLint across the frontend app |
-| frontend typecheck | `cd frontend && npm run typecheck` | Runs tsc --noEmit (not run by npm run build) |
-| frontend e2e | `cd frontend && npm run test:e2e` | Runs Playwright specs from e2e/; without E2E_BASE_URL it boots the backend (from backend/.venv) and the built frontend locally |
-| frontend e2e browser install | `cd frontend && npm run test:e2e:install` | Installs the Chromium browser Playwright needs before running e2e tests |
+| backend tests | `cd backend && pytest` | Runs unit and integration tests (pytest.ini sets pythonpath=. and testpaths=tests). |
+| backend lint | `cd backend && ruff check .` | Lints the backend Python code per backend/ruff.toml. |
+| backend format | `cd backend && ruff format .` | Formats the backend Python code. |
+| frontend unit tests | `cd frontend && npm test` | Runs Vitest component tests under src/ (passes with no tests found). |
+| frontend typecheck | `cd frontend && npm run typecheck` | Runs tsc --noEmit; not enforced by npm run build. |
+| frontend lint | `cd frontend && npm run lint` | Runs ESLint over the frontend app; used as a development gate. |
+| frontend e2e | `cd frontend && npm run test:e2e:install && npm run test:e2e` | Installs the Chromium browser then runs Playwright specs from frontend/e2e/, auto-booting the backend (via backend/.venv) and the built frontend unless E2E_BASE_URL is set. |
 <!-- sdlc:auto:end testing -->
 
 <!-- sdlc:auto:start troubleshooting -->
 | Problem | Solution |
 |---|---|
-| Backend fails to parse PDF upload (multipart) requests | Ensure python-multipart is installed (it's in backend/requirements.txt); FastAPI only errors about this at request time. |
-| Frontend calls to the backend are blocked by CORS | Confirm the frontend's origin is included in the backend's ALLOWED_ORIGINS configuration (app/config.py), which CORSMiddleware in app/main.py reads from the environment. |
-| Document upload/RAG answers fail with a 503/502 error about Gemini | The /sessions/{id}/messages route returns 503 when Gemini isn't configured and 502 when a Gemini API call fails; check the Gemini-related environment configuration consumed by app/rag.py and app/services.py. |
-| Vector search behaves oddly or is missing in a fresh Postgres database | Run `alembic upgrade head` in backend/ -- migration 0001 enables the pgvector extension; without it DocumentChunk.embedding storage falls back to limited SQLite-compatible behavior only. |
-| pip install fails on the bcrypt/passlib combination | The pin bcrypt==4.0.1 in backend/requirements.txt is required for passlib[bcrypt]'s backend detection; don't upgrade bcrypt independently. |
-| Playwright e2e tests can't start the backend | Playwright expects a backend/.venv with dependencies installed (see playwright.config.ts); create and populate that virtualenv, or set E2E_BASE_URL to point at an already-running deployment instead. |
+| Document upload route fails with a multipart parsing error | Ensure python-multipart is installed (it's in backend/requirements.txt); FastAPI only errors at request time if it's missing. |
+| Frontend requests are blocked by CORS | Set the backend's allowed origins (ALLOWED_ORIGINS, read in app/config.py) to include the frontend's dev/deployed origin; the Vite dev server origin is the local default. |
+| No database server available locally | Leave DATABASE_URL unset; app/database.py falls back to a local SQLite file (app.db) and app/main.py's create_all builds the schema automatically. |
+| Asking a question returns a 503 'Gemini API is not configured' error | Provide the Gemini API credentials/config the backend expects (see app/rag.py and app/services.py / .env.example) before calling the message endpoints. |
+| bcrypt-related errors during signup/login password hashing | Ensure bcrypt==4.0.1 is installed exactly as pinned in backend/requirements.txt; newer bcrypt releases break passlib's backend detection. |
+| Playwright e2e suite can't start the backend | Create backend/.venv and install backend/requirements.txt into it first, since playwright.config.ts launches uvicorn from backend/.venv/bin/python. |
 <!-- sdlc:auto:end troubleshooting -->

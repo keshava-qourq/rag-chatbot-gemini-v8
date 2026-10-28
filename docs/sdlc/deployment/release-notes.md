@@ -3,6 +3,17 @@
 > Maintained by QuorQ AI SDLC. Text between `sdlc:auto` markers is regenerated; anything outside them is yours and is kept.
 
 <!-- sdlc:auto:start releases -->
+## 56d324cb54fd — 2026-10-28
+
+**Commit:** `56d324c`
+
+**Delivered:**
+- US-001: Sign up with email and password
+- US-002: Log in with email and password
+- US-003: Log out of the application
+- US-004: Private, isolated workspace per user
+- US-005: Create a new chat session
+
 ## 7d484e0112f6 — 2026-10-28
 
 **Commit:** `7d484e0`
@@ -43,12 +54,7 @@ _Nothing delivered in this window._
 
 **Commit:** `2ed7625`
 
-**Delivered:**
-- US-001: Sign up with email and password
-- US-002: Log in with email and password
-- US-003: Log out of the application
-- US-004: Private, isolated workspace per user
-- US-005: Create a new chat session
+_Nothing delivered in this window._
 
 ## 79cbc3012d52 — 2026-10-27
 
