@@ -7,18 +7,39 @@ import { Icons } from "@/lib/icons";
 import { brand } from "@/lib/brand";
 import { useNavigate } from "@/lib/navigate";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { Button, Table, THead, TBody, TR, TH, TD, Empty } = UI;
+
+// The session detail screen's route (unchanged by this ticket) carries no
+// :sessionId segment, so the id it needs to call /sessions/{id}/messages is
+// handed off here, the only place that knows which row was opened.
+const ACTIVE_SESSION_STORAGE_KEY = "currentSessionId";
+
+function setActiveSessionId(id) {
+  try {
+    sessionStorage.setItem(ACTIVE_SESSION_STORAGE_KEY, id);
+  } catch (e) {
+    // sessionStorage unavailable (e.g. private browsing) -- the detail
+    // screen will fall back to its own empty state.
+  }
+}
 
 export default function Screen() {
   const navigate = useNavigate();
   const seedSessions = [
-    { id: 'sess-8f21', name: 'Q3 Earnings Call Analysis', created_at: '2026-10-26T14:32:00' },
-    { id: 'sess-6c04', name: 'Lease Renewal – Riverside Office', created_at: '2026-10-24T09:15:00' },
-    { id: 'sess-3a99', name: 'Clinical Trial Protocol Review', created_at: '2026-10-22T18:47:00' },
-    { id: 'sess-1d77', name: 'Vendor MSA Redline', created_at: '2026-10-20T11:03:00' },
-    { id: 'sess-9e42', name: 'Immigration Policy Briefing', created_at: '2026-10-18T16:20:00' },
-    { id: 'sess-5b10', name: 'Thesis Literature Review – Soil Carbon', created_at: '2026-10-14T08:55:00' },
+    { id: "sess-8f21", name: "Q3 Earnings Call Analysis", created_at: "2026-10-26T14:32:00" },
+    {
+      id: "sess-6c04",
+      name: "Lease Renewal – Riverside Office",
+      created_at: "2026-10-24T09:15:00",
+    },
+    { id: "sess-3a99", name: "Clinical Trial Protocol Review", created_at: "2026-10-22T18:47:00" },
+    { id: "sess-1d77", name: "Vendor MSA Redline", created_at: "2026-10-20T11:03:00" },
+    { id: "sess-9e42", name: "Immigration Policy Briefing", created_at: "2026-10-18T16:20:00" },
+    {
+      id: "sess-5b10",
+      name: "Thesis Literature Review – Soil Carbon",
+      created_at: "2026-10-14T08:55:00",
+    },
   ];
 
   const [sessions, setSessions] = React.useState(seedSessions);
@@ -26,8 +47,12 @@ export default function Screen() {
 
   const formatDate = (iso) => {
     const d = new Date(iso);
-    const datePart = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const timePart = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    const datePart = d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+    const timePart = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
     return `${datePart} · ${timePart}`;
   };
 
@@ -41,27 +66,29 @@ export default function Screen() {
     };
     setSessions((prev) => [newSession, ...prev]);
     setJustCreatedId(newId);
-    navigate('sessions-sessionid');
+    setActiveSessionId(newId);
+    navigate("sessions-sessionid");
   };
 
   const handleOpenSession = (id) => {
-    navigate('sessions-sessionid');
+    setActiveSessionId(id);
+    navigate("sessions-sessionid");
   };
 
   const handleLogout = () => {
-    navigate('login');
+    navigate("login");
   };
 
-  const hairline = 'rgba(255,255,255,0.13)';
-  const glassFill = 'rgba(255,255,255,0.07)';
+  const hairline = "rgba(255,255,255,0.13)";
+  const glassFill = "rgba(255,255,255,0.07)";
 
   return (
     <div
       style={{
-        minHeight: '100%',
-        padding: '48px 32px',
+        minHeight: "100%",
+        padding: "48px 32px",
         fontFamily: brand.fontBody,
-        color: '#eaf2fb',
+        color: "#eaf2fb",
       }}
     >
       <style>{`
@@ -90,54 +117,54 @@ export default function Screen() {
         }
       `}</style>
 
-      <div style={{ maxWidth: 1040, margin: '0 auto' }}>
+      <div style={{ maxWidth: 1040, margin: "0 auto" }}>
         {/* Row 1 */}
         <div
           style={{
-            display: 'flex',
-            alignItems: 'center',
+            display: "flex",
+            alignItems: "center",
             gap: 16,
             marginBottom: 40,
-            flexWrap: 'wrap',
+            flexWrap: "wrap",
           }}
         >
           <h1
             data-wf="b-0-0"
             style={{
-              flex: '1 1 480px',
+              flex: "1 1 480px",
               fontFamily: brand.fontHeading,
               fontWeight: 800,
               fontSize: 40,
               lineHeight: 1.1,
               margin: 0,
-              letterSpacing: '-0.02em',
+              letterSpacing: "-0.02em",
               background: `linear-gradient(90deg, #ffffff 0%, ${brand.primaryColor} 120%)`,
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              color: 'transparent',
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              color: "transparent",
             }}
           >
             My Sessions
           </h1>
 
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ display: "flex", gap: 12 }}>
             <Button
               data-wf="b-0-2"
               onClick={handleLogout}
               className="sess-btn-secondary"
               aria-label="Log out of your account"
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
+                display: "inline-flex",
+                alignItems: "center",
                 gap: 8,
-                padding: '12px 20px',
+                padding: "12px 20px",
                 borderRadius: brand.radius,
-                background: 'rgba(255,255,255,0.06)',
+                background: "rgba(255,255,255,0.06)",
                 border: `1px solid ${hairline}`,
                 color: brand.neutralColor,
                 fontWeight: 600,
                 fontSize: 15,
-                cursor: 'pointer',
+                cursor: "pointer",
               }}
             >
               <Icons.X size={16} aria-hidden="true" />
@@ -149,17 +176,17 @@ export default function Screen() {
               onClick={handleNewSession}
               className="sess-btn-primary"
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
+                display: "inline-flex",
+                alignItems: "center",
                 gap: 8,
-                padding: '12px 22px',
+                padding: "12px 22px",
                 borderRadius: brand.radius,
-                border: 'none',
+                border: "none",
                 background: `linear-gradient(90deg, ${brand.primaryColor} 0%, ${brand.accentColor} 100%)`,
-                color: '#06142b',
+                color: "#06142b",
                 fontWeight: 800,
                 fontSize: 15,
-                cursor: 'pointer',
+                cursor: "pointer",
                 boxShadow: `0 0 40px 0 rgba(232,121,249,0.35), 0 0 60px 0 rgba(34,211,238,0.25)`,
               }}
             >
@@ -177,8 +204,8 @@ export default function Screen() {
               borderRadius: brand.radius,
               background: glassFill,
               border: `1px solid ${hairline}`,
-              backdropFilter: 'blur(16px)',
-              WebkitBackdropFilter: 'blur(16px)',
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
               padding: 8,
             }}
           >
@@ -189,17 +216,17 @@ export default function Screen() {
                 <Button
                   onClick={handleNewSession}
                   style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
+                    display: "inline-flex",
+                    alignItems: "center",
                     gap: 8,
-                    padding: '12px 22px',
+                    padding: "12px 22px",
                     borderRadius: brand.radius,
-                    border: 'none',
+                    border: "none",
                     background: `linear-gradient(90deg, ${brand.primaryColor} 0%, ${brand.accentColor} 100%)`,
-                    color: '#06142b',
+                    color: "#06142b",
                     fontWeight: 800,
                     fontSize: 15,
-                    cursor: 'pointer',
+                    cursor: "pointer",
                   }}
                 >
                   <Icons.Plus size={18} aria-hidden="true" />
@@ -215,24 +242,24 @@ export default function Screen() {
               borderRadius: brand.radius,
               background: glassFill,
               border: `1px solid ${hairline}`,
-              backdropFilter: 'blur(16px)',
-              WebkitBackdropFilter: 'blur(16px)',
-              overflow: 'hidden',
-              boxShadow: '0 20px 60px 0 rgba(6,20,43,0.5)',
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+              overflow: "hidden",
+              boxShadow: "0 20px 60px 0 rgba(6,20,43,0.5)",
             }}
           >
-            <Table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <Table style={{ width: "100%", borderCollapse: "collapse" }}>
               <THead>
                 <TR style={{ borderBottom: `1px solid ${hairline}` }}>
                   <TH
                     data-wf="i-1-0-0"
                     style={{
-                      textAlign: 'left',
-                      padding: '18px 24px',
+                      textAlign: "left",
+                      padding: "18px 24px",
                       fontSize: 13,
                       fontWeight: 700,
-                      letterSpacing: '0.04em',
-                      textTransform: 'uppercase',
+                      letterSpacing: "0.04em",
+                      textTransform: "uppercase",
                       color: brand.neutralColor,
                     }}
                   >
@@ -241,12 +268,12 @@ export default function Screen() {
                   <TH
                     data-wf="i-1-0-1"
                     style={{
-                      textAlign: 'left',
-                      padding: '18px 24px',
+                      textAlign: "left",
+                      padding: "18px 24px",
                       fontSize: 13,
                       fontWeight: 700,
-                      letterSpacing: '0.04em',
-                      textTransform: 'uppercase',
+                      letterSpacing: "0.04em",
+                      textTransform: "uppercase",
                       color: brand.neutralColor,
                       width: 260,
                     }}
@@ -259,10 +286,10 @@ export default function Screen() {
                 {sessions.map((s) => (
                   <TR
                     key={s.id}
-                    className={`sess-row${s.id === justCreatedId ? ' sess-row-new' : ''}`}
+                    className={`sess-row${s.id === justCreatedId ? " sess-row-new" : ""}`}
                     style={{
                       borderBottom: `1px solid ${hairline}`,
-                      position: 'relative',
+                      position: "relative",
                     }}
                   >
                     <TD style={{ padding: 0 }}>
@@ -273,22 +300,22 @@ export default function Screen() {
                         onClick={() => handleOpenSession(s.id)}
                         aria-label={`Open session ${s.name}`}
                         style={{
-                          all: 'unset',
-                          position: 'absolute',
+                          all: "unset",
+                          position: "absolute",
                           inset: 0,
-                          cursor: 'pointer',
+                          cursor: "pointer",
                         }}
                       />
                       <div
                         style={{
-                          padding: '18px 24px',
-                          display: 'flex',
-                          alignItems: 'center',
+                          padding: "18px 24px",
+                          display: "flex",
+                          alignItems: "center",
                           gap: 12,
                           fontSize: 16,
                           fontWeight: 600,
-                          color: '#f4f8ff',
-                          pointerEvents: 'none',
+                          color: "#f4f8ff",
+                          pointerEvents: "none",
                         }}
                       >
                         <Icons.FileText
@@ -306,11 +333,11 @@ export default function Screen() {
                     </TD>
                     <TD
                       style={{
-                        padding: '18px 24px',
+                        padding: "18px 24px",
                         fontSize: 14,
                         color: brand.neutralColor,
-                        fontVariantNumeric: 'tabular-nums',
-                        pointerEvents: 'none',
+                        fontVariantNumeric: "tabular-nums",
+                        pointerEvents: "none",
                       }}
                     >
                       {formatDate(s.created_at)}
@@ -329,7 +356,8 @@ export default function Screen() {
             color: brand.neutralColor,
           }}
         >
-          Private to your account — other users can never see these sessions, documents, or conversations.
+          Private to your account — other users can never see these sessions, documents, or
+          conversations.
         </p>
       </div>
     </div>
