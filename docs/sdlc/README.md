@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 Build a rag chatbot where user can upload there own documents and ask queries about them use gemini-2.5-flash for answers and gemini-embedding-001 for embeddings and have chat history and sessions
 
-**Documentation version:** v24
+**Documentation version:** v25
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -15,7 +15,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 |---|---|
 | [Requirements](requirements/README.md) | v2 approved |
 | [Architecture](architecture/README.md) | 18 entries |
-| [Development](development/README.md) | 15 entries |
+| [Development](development/README.md) | 13 entries |
 | [Testing](testing/README.md) | 1 entry |
 | [Deployment](deployment/README.md) | 1 entry |
 | [Maintenance](maintenance/README.md) | 1 entry |
@@ -31,7 +31,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 | [Runbook](deployment/runbook.md) | deployed |
 | [Release notes](deployment/release-notes.md) | 10 releases |
 | [Traceability matrix](traceability-matrix.md) | 16 requirements |
-| [Changelog](CHANGELOG.md) | 24 versions |
+| [Changelog](CHANGELOG.md) | 25 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -56,17 +56,19 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 
 ### Development
 
-- No explicit item-to-sprint assignment given in input; alignment with EPIC-001/US-005 is inferred from goal wording only.
-- No development run confirmation of completion for this sprint's likely scope.
-- No explicit item-to-sprint assignment given in input.
-- Items US-012 through US-016 appear in the backlog after this sprint's listed goal but are not explicitly assigned to any sprint.
-- No development run status recorded for US-001 through US-004 in this input.
-- No development run status recorded for US-005 or US-006 in this input.
-- No development run status recorded for US-007, US-008, or their subtasks in this input.
-- No development run status recorded for US-009, US-010, or US-009's subtasks in this input.
-- No development run status recorded for US-011 in this input.
-- Not listed in the development run's delivered tickets; completion status unconfirmed.
-- Discrepancy: overall run status is 'completed' but 14 of 16 planned stories (US-001–US-011, US-014–US-016) have no ticket-level delivery record in this input -- needs human verification of whether this is an incomplete report or an actual scope gap.
+- Plan input does not explicitly state which backlog items (US-xxx) were assigned to this sprint; mapping to EPIC-001/US-001-US-004 is a plausible inference only, not a stated fact.
+- No development run data ties any delivered ticket to this sprint.
+- Plan input does not explicitly state which backlog items were assigned to this sprint.
+- Only US-014 and US-015 (from this likely range) have recorded development delivery; the rest have no dev status recorded.
+- No development run record exists for US-001, US-002, US-003, or US-004 despite the dev run being marked completed; delivery status for this epic's stories is unconfirmed.
+- No development run record exists for US-005 or US-006 despite the dev run being marked completed; delivery status for this epic's stories is unconfirmed.
+- No development run record exists for US-007 or US-008 (or their tasks) despite the dev run being marked completed; delivery status for this epic's stories is unconfirmed.
+- No development run record exists for US-009 or US-010 (or US-009's tasks) despite the dev run being marked completed; delivery status for this epic's stories is unconfirmed.
+- No development run record exists for US-011 despite the dev run being marked completed; delivery status for this epic's story is unconfirmed.
+- No development run record exists for US-012, US-013, or US-016 despite the overall dev run being marked 'completed' -- this is a discrepancy between claimed phase status and recorded ticket-level evidence and should be reconciled.
+- US-014 and US-015 share the identical commit hash, which may indicate they were delivered together in one commit/PR; this is noted but not confirmed as intentional or erroneous by the input.
+- Discrepancy: run status says 'completed' but 14 of 16 planned stories (US-001-US-013, US-016) have no delivery ticket in the input -- unclear whether they were delivered without being logged, descoped, or still pending. Needs reconciliation with the planning/dev team.
+- No commit, PR, or code artifact references were provided for US-001 through US-013 or US-016.
 
 ### Testing
 
