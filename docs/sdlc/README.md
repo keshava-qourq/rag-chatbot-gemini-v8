@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 Build a rag chatbot where user can upload there own documents and ask queries about them use gemini-2.5-flash for answers and gemini-embedding-001 for embeddings and have chat history and sessions
 
-**Documentation version:** v22
+**Documentation version:** v23
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -15,7 +15,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 |---|---|
 | [Requirements](requirements/README.md) | v2 approved |
 | [Architecture](architecture/README.md) | 18 entries |
-| [Development](development/README.md) | 4 entries |
+| [Development](development/README.md) | 15 entries |
 | [Testing](testing/README.md) | 1 entry |
 | [Deployment](deployment/README.md) | 1 entry |
 | [Maintenance](maintenance/README.md) | 1 entry |
@@ -31,7 +31,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 | [Runbook](deployment/runbook.md) | deployed |
 | [Release notes](deployment/release-notes.md) | 9 releases |
 | [Traceability matrix](traceability-matrix.md) | 16 requirements |
-| [Changelog](CHANGELOG.md) | 22 versions |
+| [Changelog](CHANGELOG.md) | 23 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -56,14 +56,17 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 
 ### Development
 
-- Epics (EPIC-001 through EPIC-005) have no assigned role or point estimate recorded.
-- Plan defines scope and ownership but contains no completion/status field per item -- actual delivery must be cross-checked against the development run log.
-- No test or QA evidence accompanies this delivery record -- confirm via testing phase before treating as fully verified.
-- Sub-tasks US-007-T1 through US-007-T4 have no individual status reported -- only the parent story ticket is confirmed delivered.
-- No test or QA evidence accompanies this delivery record.
-- Discrepancy: run status says 'completed' while 9 of 11 planned stories have no recorded ticket outcome -- confirm whether these were actually implemented, are pending, or were simply omitted from this report.
-- No commit references exist for US-001, US-002, US-003, US-004, US-005, US-008, US-009, US-010, or US-011.
-- No sub-task-level status for US-008-T1..T4 or US-009-T1..T4, which are critical to the embedding pipeline and grounded QA functionality.
+- No explicit item-to-sprint assignment given in input; alignment with EPIC-001/US-005 is inferred from goal wording only.
+- No development run confirmation of completion for this sprint's likely scope.
+- No explicit item-to-sprint assignment given in input.
+- Items US-012 through US-016 appear in the backlog after this sprint's listed goal but are not explicitly assigned to any sprint.
+- No development run status recorded for US-001 through US-004 in this input.
+- No development run status recorded for US-005 or US-006 in this input.
+- No development run status recorded for US-007, US-008, or their subtasks in this input.
+- No development run status recorded for US-009, US-010, or US-009's subtasks in this input.
+- No development run status recorded for US-011 in this input.
+- Not listed in the development run's delivered tickets; completion status unconfirmed.
+- Discrepancy: overall run status is 'completed' but 14 of 16 planned stories (US-001–US-011, US-014–US-016) have no ticket-level delivery record in this input -- needs human verification of whether this is an incomplete report or an actual scope gap.
 
 ### Testing
 
