@@ -7,28 +7,58 @@
 //
 // Set at build time: the platform bakes the deployed API URL into the frontend build. The
 // fallback is the local backend so a bare `npm run dev` still points somewhere real.
-//
-// The generated screens do NOT use this yet -- they render seeded sample data, exactly as
-// they were approved. This is the seam to replace that with real calls, one screen at a
-// time.
-export const API_BASE_URL: string =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+import { clearToken, getToken } from "@/lib/auth";
 
-// The shared bearer the deployed API expects (its SECRET_KEY). The platform bakes the
-// same value into both sides at deploy time, so authenticated calls work out of the box.
+export const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+
+// Kept for now per this ticket's constraints: no longer used to authenticate
+// requests (apiFetch now attaches the per-user token from lib/auth instead),
+// but other code may still import it.
 export const API_SECRET_KEY: string = import.meta.env.VITE_API_SECRET_KEY ?? "";
 
+export class ApiError extends Error {
+  status: number;
+  detail?: string;
+
+  constructor(message: string, status: number, detail?: string) {
+    super(message);
+    this.status = status;
+    this.detail = detail;
+  }
+}
+
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getToken();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
-      ...(API_SECRET_KEY ? { Authorization: `Bearer ${API_SECRET_KEY}` } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers ?? {}),
     },
   });
   if (!response.ok) {
-    throw new Error(`${init?.method ?? "GET"} ${path} failed: ${response.status}`);
+    let detail: string | undefined;
+    try {
+      const body = await response.json();
+      detail = typeof body?.detail === "string" ? body.detail : undefined;
+    } catch {
+      // Body wasn't JSON (or was empty) -- no server-provided detail to surface.
+    }
+    // A 401 while we had a token means the session is no longer valid (expired
+    // or revoked): force re-login. A 401 with no token attached (e.g. a bad
+    // login attempt) is just a normal failed request -- nothing to invalidate.
+    if (response.status === 401 && token) {
+      clearToken();
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
+    }
+    throw new ApiError(
+      `${init?.method ?? "GET"} ${path} failed: ${response.status}`,
+      response.status,
+      detail,
+    );
   }
   return response.status === 204 ? (undefined as T) : ((await response.json()) as T);
 }

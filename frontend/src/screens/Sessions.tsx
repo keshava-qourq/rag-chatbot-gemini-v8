@@ -6,6 +6,8 @@ import * as UI from "@/lib/ui";
 import { Icons } from "@/lib/icons";
 import { brand } from "@/lib/brand";
 import { useNavigate } from "@/lib/navigate";
+import { apiFetch } from "@/lib/api";
+import { clearToken } from "@/lib/auth";
 
 const { Button, Table, THead, TBody, TR, TH, TD, Empty } = UI;
 
@@ -75,8 +77,19 @@ export default function Screen() {
     navigate("sessions-sessionid");
   };
 
-  const handleLogout = () => {
-    navigate("login");
+  // NFR-004: logging out must immediately invalidate the session server-side
+  // (revoke the token) and clear it locally, so a stale tab can't keep making
+  // authenticated requests.
+  const handleLogout = async () => {
+    try {
+      await apiFetch("/auth/logout", { method: "POST" });
+    } catch (e) {
+      // Already-expired/invalid token, or offline -- still clear locally and
+      // send the user back to /login either way.
+    } finally {
+      clearToken();
+      navigate("login");
+    }
   };
 
   const hairline = "rgba(255,255,255,0.13)";
