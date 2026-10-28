@@ -3,35 +3,17 @@
 > Maintained by QuorQ AI SDLC. Text between `sdlc:auto` markers is regenerated; anything outside them is yours and is kept.
 
 <!-- sdlc:auto:start narrative -->
-### DEPLOY-79cbc30 · approved · source: deployment:79cbc3012d52
+### DEPLOY-2ed7625ea79e · approved · source: deployment:2ed7625ea79e
 
-The Rag_chatbot_gemini_v8 application is deployed and live under version 79cbc3012d52. A frontend and backend endpoint are both publicly reachable.
+Rag_chatbot_gemini_v8 is live at version 2ed7625ea79e, with a frontend hosted on AWS Amplify and a backend reachable via a separate URL.
 
-Deployment status: live. Version/build identifier: 79cbc3012d52. Frontend hosted at https://p5b327a9dbdb3.d3j61xaup4zgrx.amplifyapp.com. Backend hosted at https://35-155-27-11.sslip.io/apps/5b327a9dbdb3/. No deployment date, deploying agent/human, approval record, or release notes were included in the input.
+Status: live. Version: 2ed7625ea79e. Frontend URL: https://p5b327a9dbdb3.d3j61xaup4zgrx.amplifyapp.com. Backend URL: https://35-155-27-11.sslip.io/apps/5b327a9dbdb3/. No deployment date, deploying agent/human, approval record, rollback plan, or environment/config details were included in the input. Related requirement ids are inferred as all known requirements since this deployment record does not specify which features/user stories were included in this release.
 
-- ⚠ No deployment date/timestamp provided.
+**Related:** US-001, US-002, US-003, US-004, US-005, US-006, US-007, US-008, US-009, US-010, US-011
+
+- ⚠ No deployment date provided.
 - ⚠ No record of who approved or triggered this deployment.
-- ⚠ No release notes or changelog describing what version 79cbc3012d52 contains relative to prior versions.
-- ⚠ No mapping given between this deployment and the requirement keys (US-001..US-011) it is meant to fulfill -- cannot confirm which features are included in this release.
-- ⚠ No environment details (e.g., staging vs production, infra provider specifics beyond the sslip.io/Amplify hosts).
-- ⚠ No rollback or monitoring plan recorded.
-
-### DEPLOY-FRONTEND-URL · approved · source: deployment:79cbc3012d52
-
-Frontend of the chatbot is hosted via AWS Amplify at a publicly accessible URL.
-
-Frontend URL: https://p5b327a9dbdb3.d3j61xaup4zgrx.amplifyapp.com. No further detail on build pipeline, environment variables, or CDN/caching configuration was provided.
-
-- ⚠ No confirmation of which app features/screens are live at this URL versus still pending.
-- ⚠ No information on custom domain, TLS cert ownership, or CI/CD pipeline used to produce this deployment.
-
-### DEPLOY-BACKEND-URL · approved · source: deployment:79cbc3012d52
-
-Backend API for the chatbot is hosted at a sslip.io-based URL, presumably serving the RAG/chat/session endpoints.
-
-Backend URL: https://35-155-27-11.sslip.io/apps/5b327a9dbdb3/. No details were given on backend framework, scaling configuration, database/vector-store connectivity, or API documentation.
-
-- ⚠ No confirmation that backend endpoints (upload, query, chat history, sessions) are operational at this URL -- only the base host was given.
-- ⚠ No information on backend infrastructure (containerization, scaling, secrets management, or database connection for chat history/sessions).
-- ⚠ No security/compliance notes (e.g., TLS, auth) for this backend endpoint.
+- ⚠ No information on which specific requirements/features (US-001 through US-011) are confirmed live in this version -- related_ids assumed to be all known requirements pending confirmation.
+- ⚠ No rollback plan, environment configuration, or infrastructure details (e.g. hosting provider for backend, database, vector store) documented.
+- ⚠ No deployment/testing phase inputs were provided prior to this, so it is unclear whether this release was preceded by a testing sign-off.
 <!-- sdlc:auto:end narrative -->
