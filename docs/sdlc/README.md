@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 Build a rag chatbot where user can upload there own documents and ask queries about them use gemini-2.5-flash for answers and gemini-embedding-001 for embeddings and have chat history and sessions
 
-**Documentation version:** v4
+**Documentation version:** v5
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -15,7 +15,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 |---|---|
 | [Requirements](requirements/README.md) | v1 approved |
 | [Architecture](architecture/README.md) | 18 entries |
-| [Development](development/README.md) | 5 entries |
+| [Development](development/README.md) | 11 entries |
 | [Testing](testing/README.md) | 1 entry |
 | [Deployment](deployment/README.md) | 3 entries |
 | [Maintenance](maintenance/README.md) | 1 entry |
@@ -24,14 +24,14 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 | [Decisions (ADRs)](architecture/adr/README.md) | 4 decisions |
 | [Sprint plan](development/sprint-plan.md) | 4 sprints |
 | [Developer guide](development/developer-guide.md) | generated |
-| [API reference](development/api-reference.md) | 1 route |
+| [API reference](development/api-reference.md) | 11 routes |
 | [Test report](testing/test-report.md) | not run yet |
 | [Tests](testing/test-cases.md) | 0 tests |
 | [Deployment guide](deployment/deployment-guide.md) | deployed |
 | [Runbook](deployment/runbook.md) | deployed |
 | [Release notes](deployment/release-notes.md) | 1 release |
 | [Traceability matrix](traceability-matrix.md) | 11 requirements |
-| [Changelog](CHANGELOG.md) | 4 versions |
+| [Changelog](CHANGELOG.md) | 5 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -51,13 +51,11 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 
 ### Development
 
-- No record of who approved the plan or when.
-- No execution/progress status (in-progress, done, blocked) given for any sprint or item — only the backlog plan itself was provided.
-- No evidence provided that these items were actually implemented or completed — only planned.
-- No evidence provided that these items or sub-tasks were actually implemented or completed — only planned.
-- No detail on validation rules (allowed file types, size/count limits) beyond the task title.
-- No specifics given on chunking strategy parameters (chunk size, overlap) or failure-handling behavior beyond task titles.
-- No detail on how citations are rendered or on chat history retention limits/format beyond the story titles.
+- No ticket delivery status reported for US-006 or US-007 despite the dev run being marked completed.
+- No ticket delivery status reported for US-008 or its sub-tasks despite the dev run being marked completed.
+- No ticket delivery status reported for US-009, US-010, or US-011 or any US-009 sub-tasks despite the dev run being marked completed.
+- Confirm whether US-006 through US-011 and their sub-tasks were actually implemented, or whether the 'completed' run status is premature/inaccurate.
+- No commit references available for Sprints 2-4 scope.
 
 ### Testing
 
