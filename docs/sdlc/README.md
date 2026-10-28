@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 Build a rag chatbot where user can upload there own documents and ask queries about them use gemini-2.5-flash for answers and gemini-embedding-001 for embeddings and have chat history and sessions
 
-**Documentation version:** v18
+**Documentation version:** v19
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -31,7 +31,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 | [Runbook](deployment/runbook.md) | deployed |
 | [Release notes](deployment/release-notes.md) | 8 releases |
 | [Traceability matrix](traceability-matrix.md) | 11 requirements |
-| [Changelog](CHANGELOG.md) | 18 versions |
+| [Changelog](CHANGELOG.md) | 19 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -67,11 +67,13 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 
 ### Deployment
 
-- No deployment date/timestamp given.
-- No record of who approved or triggered this deployment.
-- No infrastructure, environment variables, or configuration details provided.
-- No monitoring, logging, or rollback plan documented.
-- No mapping from this deployment to which requirements (US-001..US-011) were actually included/verified in this release -- related_ids listed speculatively since all are presumably part of the product but not confirmed scoped to this version.
+- No deployment date/timestamp recorded.
+- No record of who triggered or approved this deployment.
+- No indication of which requirements (US-001..US-011) or tickets are included in version 56d324cb54fd.
+- No rollback plan or previous-version reference provided.
+- No environment label (production/staging/other) given beyond 'live'.
+- No mention of pre-deployment test results or sign-off backing this release.
+- No monitoring/health-check or post-deployment verification info provided.
 
 ### Maintenance
 
