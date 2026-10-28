@@ -149,7 +149,7 @@ export default function Screen() {
 
   function nextId(prefix) {
     idCounter.current += 1;
-    return `${prefix}-${Date.now()}-${idCounter.current}`;
+    return `${prefix}-${idCounter.current}`;
   }
 
   function resetFileInput() {
@@ -249,9 +249,7 @@ export default function Screen() {
       setUploadMessage(`"${file.name}" was uploaded and is being processed.`);
       resetFileInput();
     } catch (err) {
-      rejectUpload(
-        err?.detail || `"${file.name}" couldn't be uploaded. Please try again.`,
-      );
+      rejectUpload(err?.detail || `"${file.name}" couldn't be uploaded. Please try again.`);
     } finally {
       setUploading(false);
     }
