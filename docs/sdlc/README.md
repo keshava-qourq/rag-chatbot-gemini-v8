@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 Build a rag chatbot where user can upload there own documents and ask queries about them use gemini-2.5-flash for answers and gemini-embedding-001 for embeddings and have chat history and sessions
 
-**Documentation version:** v6
+**Documentation version:** v7
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -15,7 +15,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 |---|---|
 | [Requirements](requirements/README.md) | v1 approved |
 | [Architecture](architecture/README.md) | 18 entries |
-| [Development](development/README.md) | 11 entries |
+| [Development](development/README.md) | 13 entries |
 | [Testing](testing/README.md) | 1 entry |
 | [Deployment](deployment/README.md) | 1 entry |
 | [Maintenance](maintenance/README.md) | 1 entry |
@@ -31,7 +31,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 | [Runbook](deployment/runbook.md) | deployed |
 | [Release notes](deployment/release-notes.md) | 2 releases |
 | [Traceability matrix](traceability-matrix.md) | 11 requirements |
-| [Changelog](CHANGELOG.md) | 6 versions |
+| [Changelog](CHANGELOG.md) | 7 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -51,11 +51,10 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 
 ### Development
 
-- No ticket delivery status reported for US-006 or US-007 despite the dev run being marked completed.
-- No ticket delivery status reported for US-008 or its sub-tasks despite the dev run being marked completed.
-- No ticket delivery status reported for US-009, US-010, or US-011 or any US-009 sub-tasks despite the dev run being marked completed.
-- Confirm whether US-006 through US-011 and their sub-tasks were actually implemented, or whether the 'completed' run status is premature/inaccurate.
-- No commit references available for Sprints 2-4 scope.
+- Discrepancy: run status says 'completed' but 9 of 11 planned stories (US-001-005, US-008-011) have no ticket outcome recorded -- unclear if they were actually implemented, skipped, or simply not reported.
+- No development ticket status reported for this story despite the development run being marked completed.
+- Delivery status covers the parent story only; no individual confirmation per subtask (T1-T4) was reported.
+- No development ticket status reported for this story or its subtasks despite the development run being marked completed.
 
 ### Testing
 

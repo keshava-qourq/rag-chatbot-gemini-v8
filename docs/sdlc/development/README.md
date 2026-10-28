@@ -3,100 +3,129 @@
 > Maintained by QuorQ AI SDLC. Text between `sdlc:auto` markers is regenerated; anything outside them is yours and is kept.
 
 <!-- sdlc:auto:start narrative -->
-### DEV-PLAN-001 · approved · source: plan:v1
+### DEV-PLAN-001 · approved · source: plan
 
-Development plan version 1 is approved, organized into 4 sprints of 20-point capacity each, aligned to 5 epics: Accounts & Authentication, Chat Session Management, PDF Upload & Processing, Retrieval-Augmented QA, and Chat History.
+Approved plan v1 organizes the project into 5 epics and 4 sprints of capacity 20 each, covering auth, session management, PDF upload/processing, retrieval-augmented QA, and chat history.
 
-Plan status: approved, version 1. Sprint breakdown: Sprint 1 - stand up authentication, per-user authorization, and chat session creation (capacity 20); Sprint 2 - enable browsing/switching sessions and uploading validated PDFs into a session (capacity 20); Sprint 3 - build background pipeline to parse, chunk, and embed uploaded PDFs into pgvector (capacity 20); Sprint 4 - deliver grounded QA with citations and full persistent chat history (capacity 20). Backlog includes 5 epics (EPIC-001..EPIC-005, unassigned role/points as containers) and 11 stories (US-001..US-011) with assigned points and roles, plus implementation tasks under US-007 (T1-T4), US-008 (T1-T4), and US-009 (T1-T4).
+Sprint 1 goal: stand up authentication, per-user authorization, and chat session creation (maps to US-001, US-002, US-003, US-004, US-005). Sprint 2 goal: enable browsing/switching sessions and uploading validated PDFs (US-006, US-007). Sprint 3 goal: build background pipeline to parse, chunk, and embed PDFs into pgvector (US-008). Sprint 4 goal: deliver grounded QA with citations and persistent chat history (US-009, US-010, US-011). Epics: EPIC-001 User Accounts & Authentication, EPIC-002 Chat Session Management, EPIC-003 PDF Upload & Processing, EPIC-004 Retrieval-Augmented Question Answering, EPIC-005 Chat History.
 
 **Related:** US-001, US-002, US-003, US-004, US-005, US-006, US-007, US-008, US-009, US-010, US-011
 
-### DEV-SPRINT-1 · approved · source: plan:Sprint 1
+### DEV-RUN-2026 · draft · source: dev:run-status
 
-Sprint 1 goal: stand up authentication, per-user authorization, and the ability to create a chat session.
+Development run is marked 'completed' but only 2 of the 11 planned stories have recorded ticket status.
 
-Capacity 20 points. Scope aligns to EPIC-001 (User Accounts & Authentication: US-001 sign up, US-002 log in, US-003 log out, US-004 private isolated workspace per user, role security-agent) and the start of EPIC-002 (US-005 create a new chat session).
-
-**Related:** US-001, US-002, US-003, US-004, US-005
-
-### DEV-SPRINT-2 · approved · source: plan:Sprint 2
-
-Sprint 2 goal: enable browsing/switching sessions and uploading validated PDFs into a session.
-
-Capacity 20 points. Scope covers US-006 (view and switch between sessions, frontend-agent) and US-007 (upload a PDF to a chat session, backend-agent) with sub-tasks for upload endpoint validation (US-007-T1), S3 storage and metadata persistence (US-007-T2), Redis queue enqueue on upload (US-007-T3), and document list endpoint with per-document status (US-007-T4).
+Run status field states 'completed'. Only two tickets were reported with outcomes: US-006 (delivered, commit 65402495f65f12c5ac3a1bca760dbb186874d04e) and US-007 (delivered, commit 02bd1f2a3ca016bb68dc219b620a90cd64104ead). No ticket entries were provided for US-001, US-002, US-003, US-004, US-005, US-008, US-009, US-010, or US-011.
 
 **Related:** US-006, US-007
 
-- ⚠ No ticket delivery status reported for US-006 or US-007 despite the dev run being marked completed.
+- ⚠ Discrepancy: run status says 'completed' but 9 of 11 planned stories (US-001-005, US-008-011) have no ticket outcome recorded -- unclear if they were actually implemented, skipped, or simply not reported.
 
-### DEV-SPRINT-3 · approved · source: plan:Sprint 3
+### US-001 · draft · source: plan:US-001
 
-Sprint 3 goal: build the background pipeline that parses, chunks, and embeds uploaded PDFs into pgvector.
+Planned story: sign up with email and password.
 
-Capacity 20 points. Scope covers US-008 (parse, chunk, embed uploaded PDFs, backend-agent) with sub-tasks: PDF text extraction and page-aware chunking in worker (US-008-T1), gemini-embedding-001 integration to embed chunks (US-008-T2, integration-agent), persisting chunk embeddings into a pgvector-backed document_chunks table (US-008-T3), and status transitions/failure handling for parse or API errors (US-008-T4).
+Plan item US-001, 3 points, assigned role backend-agent, part of EPIC-001 (User Accounts & Authentication), scheduled under Sprint 1 goal (auth/authorization/session creation).
 
-**Related:** US-008
+**Related:** EPIC-001
 
-- ⚠ No ticket delivery status reported for US-008 or its sub-tasks despite the dev run being marked completed.
+- ⚠ No development ticket status reported for this story despite the development run being marked completed.
 
-### DEV-SPRINT-4 · approved · source: plan:Sprint 4
+### US-002 · draft · source: plan:US-002
 
-Sprint 4 goal: deliver grounded question answering with citations and full persistent chat history.
+Planned story: log in with email and password.
 
-Capacity 20 points. Scope covers US-009 (ask a question scoped to active session's documents, backend-agent) with sub-tasks for similarity search restricted to ready documents (US-009-T1), gemini-2.5-flash grounded generation (US-009-T2, integration-agent), handling no-ready-documents/no-relevant-content cases without fabricating answers (US-009-T3), and graceful error handling for Gemini failures/missing API key (US-009-T4); plus US-010 (view source citations, frontend-agent) and US-011 (retain and view full session chat history, backend-agent).
+Plan item US-002, 3 points, assigned role backend-agent, part of EPIC-001, scheduled under Sprint 1.
 
-**Related:** US-009, US-010, US-011
+**Related:** EPIC-001
 
-- ⚠ No ticket delivery status reported for US-009, US-010, or US-011 or any US-009 sub-tasks despite the dev run being marked completed.
+- ⚠ No development ticket status reported for this story despite the development run being marked completed.
 
-### DEV-2026-US-001 · approved · source: dev:TICKET-US-001
+### US-003 · draft · source: plan:US-003
 
-Sign up with email and password was delivered.
+Planned story: log out of the application.
 
-Ticket US-001 (Sign up with email and password) status=delivered, commit=db9dfe5a569f9c98da06cf00d17326b58ed70f99.
+Plan item US-003, 2 points, assigned role backend-agent, part of EPIC-001, scheduled under Sprint 1.
 
-**Related:** US-001
+**Related:** EPIC-001
 
-### DEV-2026-US-002 · approved · source: dev:TICKET-US-002
+- ⚠ No development ticket status reported for this story despite the development run being marked completed.
 
-Log in with email and password was delivered.
+### US-004 · draft · source: plan:US-004
 
-Ticket US-002 (Log in with email and password) status=delivered, commit=db9dfe5a569f9c98da06cf00d17326b58ed70f99.
+Planned story: private, isolated workspace per user.
 
-**Related:** US-002
+Plan item US-004, 5 points, assigned role security-agent, part of EPIC-001, scheduled under Sprint 1.
 
-### DEV-2026-US-003 · approved · source: dev:TICKET-US-003
+**Related:** EPIC-001
 
-Log out of the application was delivered.
+- ⚠ No development ticket status reported for this story despite the development run being marked completed.
 
-Ticket US-003 (Log out of the application) status=delivered, commit=db9dfe5a569f9c98da06cf00d17326b58ed70f99.
+### US-005 · draft · source: plan:US-005
 
-**Related:** US-003
+Planned story: create a new chat session.
 
-### DEV-2026-US-004 · approved · source: dev:TICKET-US-004
+Plan item US-005, 2 points, assigned role backend-agent, part of EPIC-002 (Chat Session Management), scheduled under Sprint 1.
 
-Private, isolated workspace per user was delivered.
+**Related:** EPIC-002
 
-Ticket US-004 (Private, isolated workspace per user) status=delivered, commit=db9dfe5a569f9c98da06cf00d17326b58ed70f99. Role security-agent per plan.
+- ⚠ No development ticket status reported for this story despite the development run being marked completed.
 
-**Related:** US-004
+### US-006 · approved · source: dev:US-006
 
-### DEV-2026-US-005 · approved · source: dev:TICKET-US-005
+Delivered story: view and switch between chat sessions.
 
-Create a new chat session was delivered.
+Plan item US-006, 5 points, assigned role frontend-agent, part of EPIC-002, scheduled under Sprint 2. Development run reports status=delivered, commit=65402495f65f12c5ac3a1bca760dbb186874d04e.
 
-Ticket US-005 (Create a new chat session) status=delivered, commit=db9dfe5a569f9c98da06cf00d17326b58ed70f99.
+**Related:** EPIC-002
 
-**Related:** US-005
+### US-007 · approved · source: dev:US-007
 
-### DEV-GAP-COMPLETION · draft · source: dev:run-status
+Delivered story: upload a PDF to a chat session, including validation, storage, and processing enqueue.
 
-The development run is reported as 'completed' but ticket-level evidence only covers 5 of the 11 planned stories.
+Plan item US-007, 8 points, assigned role backend-agent, part of EPIC-003 (PDF Upload & Processing), scheduled under Sprint 2. Subtasks per plan: US-007-T1 implement upload endpoint with type/size/count validation; US-007-T2 store accepted PDFs in S3 and persist metadata; US-007-T3 enqueue processing job on Redis queue after successful upload; US-007-T4 implement document list endpoint with per-document status. Development run reports status=delivered, commit=02bd1f2a3ca016bb68dc219b620a90cd64104ead.
 
-Dev run status field states 'completed', yet only US-001 through US-005 have individual ticket records with delivered status and commit hashes. No ticket records were provided for US-006 (view/switch sessions), US-007 (upload PDF, incl. T1-T4 sub-tasks), US-008 (parse/chunk/embed, incl. T1-T4 sub-tasks), US-009 (RAG QA, incl. T1-T4 sub-tasks), US-010 (citations), or US-011 (chat history). This is a discrepancy between the overall run status and the per-ticket evidence available.
+**Related:** EPIC-003, US-007-T1, US-007-T2, US-007-T3, US-007-T4
 
-**Related:** US-006, US-007, US-008, US-009, US-010, US-011
+- ⚠ Delivery status covers the parent story only; no individual confirmation per subtask (T1-T4) was reported.
 
-- ⚠ Confirm whether US-006 through US-011 and their sub-tasks were actually implemented, or whether the 'completed' run status is premature/inaccurate.
-- ⚠ No commit references available for Sprints 2-4 scope.
+### US-008 · draft · source: plan:US-008
+
+Planned story: parse, chunk, and embed uploaded PDFs.
+
+Plan item US-008, 13 points, assigned role backend-agent, part of EPIC-003, scheduled under Sprint 3. Subtasks per plan: US-008-T1 PDF text extraction and page-aware chunking in worker; US-008-T2 integrate gemini-embedding-001 calls to embed chunks (role integration-agent); US-008-T3 persist chunk embeddings into pgvector-backed document_chunks table; US-008-T4 implement status transitions and failure handling for parse/API errors.
+
+**Related:** EPIC-003, US-008-T1, US-008-T2, US-008-T3, US-008-T4
+
+- ⚠ No development ticket status reported for this story or its subtasks despite the development run being marked completed.
+
+### US-009 · draft · source: plan:US-009
+
+Planned story: ask a question scoped to the active session's documents.
+
+Plan item US-009, 8 points, assigned role backend-agent, part of EPIC-004 (Retrieval-Augmented Question Answering), scheduled under Sprint 4. Subtasks per plan: US-009-T1 similarity search restricted to session's ready documents; US-009-T2 integrate gemini-2.5-flash generation grounded in retrieved chunks (role integration-agent); US-009-T3 handle no-ready-documents and no-relevant-content cases without fabricating answers; US-009-T4 implement graceful error handling for Gemini failures and missing API key.
+
+**Related:** EPIC-004, US-009-T1, US-009-T2, US-009-T3, US-009-T4
+
+- ⚠ No development ticket status reported for this story or its subtasks despite the development run being marked completed.
+
+### US-010 · draft · source: plan:US-010
+
+Planned story: view source citations for each answer.
+
+Plan item US-010, 3 points, assigned role frontend-agent, part of EPIC-004, scheduled under Sprint 4.
+
+**Related:** EPIC-004, US-009
+
+- ⚠ No development ticket status reported for this story despite the development run being marked completed.
+
+### US-011 · draft · source: plan:US-011
+
+Planned story: retain and view full session chat history.
+
+Plan item US-011, 3 points, assigned role backend-agent, part of EPIC-005 (Chat History), scheduled under Sprint 4.
+
+**Related:** EPIC-005
+
+- ⚠ No development ticket status reported for this story despite the development run being marked completed.
 <!-- sdlc:auto:end narrative -->
