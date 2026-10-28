@@ -71,11 +71,7 @@ async function signup(api: APIRequestContext, email: string): Promise<string> {
   return (await response.json()).access_token as string;
 }
 
-async function createSession(
-  api: APIRequestContext,
-  token: string,
-  name: string,
-): Promise<string> {
+async function createSession(api: APIRequestContext, token: string, name: string): Promise<string> {
   const response = await api.post("/sessions", {
     headers: { Authorization: `Bearer ${token}` },
     data: { name },

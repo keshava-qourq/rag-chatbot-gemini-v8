@@ -168,9 +168,7 @@ describe("SessionsSessionid ask/history/citations", () => {
 
   it("surfaces a 422 'no ready documents' response via the askWarning banner instead of asking the question", async () => {
     mockedApiFetch.mockResolvedValueOnce([]); // initial GET
-    mockedApiFetch.mockRejectedValueOnce(
-      new Error("POST /sessions/sess-1/messages failed: 422"),
-    );
+    mockedApiFetch.mockRejectedValueOnce(new Error("POST /sessions/sess-1/messages failed: 422"));
 
     const user = userEvent.setup();
     render(<Screen />);
@@ -181,18 +179,14 @@ describe("SessionsSessionid ask/history/citations", () => {
     await user.type(input, "Any ready docs?");
     await user.click(screen.getByRole("button", { name: /Send/i }));
 
-    await waitFor(() =>
-      expect(screen.getByText(/No ready documents yet/)).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText(/No ready documents yet/)).toBeInTheDocument());
     // No fake answer added
     expect(screen.queryByText(/Any ready docs\?/)).not.toBeInTheDocument();
   });
 
   it("[AC-026] surfaces a clear inline error on a 502/503 Gemini failure and does not add a fake answer", async () => {
     mockedApiFetch.mockResolvedValueOnce([]); // initial GET
-    mockedApiFetch.mockRejectedValueOnce(
-      new Error("POST /sessions/sess-1/messages failed: 502"),
-    );
+    mockedApiFetch.mockRejectedValueOnce(new Error("POST /sessions/sess-1/messages failed: 502"));
 
     const user = userEvent.setup();
     render(<Screen />);
@@ -224,8 +218,6 @@ describe("SessionsSessionid ask/history/citations", () => {
 
     render(<Screen />);
 
-    await waitFor(() =>
-      expect(screen.getByText(/No questions asked yet/i)).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText(/No questions asked yet/i)).toBeInTheDocument());
   });
 });
