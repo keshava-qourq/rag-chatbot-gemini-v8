@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 Build a rag chatbot where user can upload there own documents and ask queries about them use gemini-2.5-flash for answers and gemini-embedding-001 for embeddings and have chat history and sessions
 
-**Documentation version:** v27
+**Documentation version:** v28
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -29,9 +29,9 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 | [Tests](testing/test-cases.md) | 0 tests |
 | [Deployment guide](deployment/deployment-guide.md) | deployed |
 | [Runbook](deployment/runbook.md) | deployed |
-| [Release notes](deployment/release-notes.md) | 11 releases |
+| [Release notes](deployment/release-notes.md) | 12 releases |
 | [Traceability matrix](traceability-matrix.md) | 16 requirements |
-| [Changelog](CHANGELOG.md) | 27 versions |
+| [Changelog](CHANGELOG.md) | 28 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -76,12 +76,12 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 
 ### Deployment
 
-- No deployment date/timestamp provided.
-- No record of who approved or triggered this deployment.
-- No change-log or list of requirements/tickets included in version 34b8c5ab2f05 -- cannot link to US-001..US-016 without guessing.
-- No rollback plan or previous version reference recorded.
-- No confirmation of environment configuration (e.g., API keys for gemini-2.5-flash, gemini-embedding-001) or infrastructure details (database, vector store) used in this deployment.
-- No post-deployment health check or smoke test results recorded.
+- No deployment date provided.
+- No record of who approved or executed the deployment.
+- No infrastructure, environment, or configuration details given (e.g. hosting provider specifics, scaling, secrets management).
+- No rollback or incident plan recorded.
+- No mapping of which requirements/features are confirmed live versus pending verification post-deployment.
+- No test or QA sign-off referenced prior to this deployment.
 
 ### Maintenance
 

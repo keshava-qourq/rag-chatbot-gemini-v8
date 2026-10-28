@@ -3,6 +3,13 @@
 > Maintained by QuorQ AI SDLC. Text between `sdlc:auto` markers is regenerated; anything outside them is yours and is kept.
 
 <!-- sdlc:auto:start releases -->
+## eba9349838e2 — 2026-10-28
+
+**Commit:** `eba9349`
+
+**Delivered:**
+- US-016: End-to-end verification that uploaded PDFs are processed and surfaced correctly
+
 ## 34b8c5ab2f05 — 2026-10-28
 
 **Commit:** `34b8c5a`

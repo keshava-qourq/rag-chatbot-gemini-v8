@@ -3,16 +3,18 @@
 > Maintained by QuorQ AI SDLC. Text between `sdlc:auto` markers is regenerated; anything outside them is yours and is kept.
 
 <!-- sdlc:auto:start narrative -->
-### DEPLOY-34b8c5ab2f05 · approved · source: deployment:34b8c5ab2f05
+### DEPLOY-eba9349838e2 · approved · source: deployment:eba9349838e2
 
-Application version 34b8c5ab2f05 is live in production, with separate frontend and backend endpoints deployed.
+The Rag_chatbot_gemini_v8 application has been deployed and is currently live, version eba9349838e2.
 
-Deployment status: live. Version identifier: 34b8c5ab2f05. Frontend hosted at https://p5b327a9dbdb3.d3j61xaup4zgrx.amplifyapp.com. Backend hosted at https://35-155-27-11.sslip.io/apps/5b327a9dbdb3/. No further detail was given on what features or fixes this version includes, which requirements it fulfills, who approved the release, or when it was deployed.
+Status: live. Version identifier: eba9349838e2. Frontend hosted at https://p5b327a9dbdb3.d3j61xaup4zgrx.amplifyapp.com. Backend hosted at https://35-155-27-11.sslip.io/apps/5b327a9dbdb3/. No further details (deployment date, deployer, approval, rollback plan, environment/infra config, or release notes) were supplied in the input.
 
-- ⚠ No deployment date/timestamp provided.
-- ⚠ No record of who approved or triggered this deployment.
-- ⚠ No change-log or list of requirements/tickets included in version 34b8c5ab2f05 -- cannot link to US-001..US-016 without guessing.
-- ⚠ No rollback plan or previous version reference recorded.
-- ⚠ No confirmation of environment configuration (e.g., API keys for gemini-2.5-flash, gemini-embedding-001) or infrastructure details (database, vector store) used in this deployment.
-- ⚠ No post-deployment health check or smoke test results recorded.
+**Related:** US-001, US-002, US-003, US-004, US-005, US-006, US-007, US-008, US-009, US-010, US-011, US-012, US-013, US-014, US-015, US-016
+
+- ⚠ No deployment date provided.
+- ⚠ No record of who approved or executed the deployment.
+- ⚠ No infrastructure, environment, or configuration details given (e.g. hosting provider specifics, scaling, secrets management).
+- ⚠ No rollback or incident plan recorded.
+- ⚠ No mapping of which requirements/features are confirmed live versus pending verification post-deployment.
+- ⚠ No test or QA sign-off referenced prior to this deployment.
 <!-- sdlc:auto:end narrative -->
