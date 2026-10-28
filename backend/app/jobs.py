@@ -1,13 +1,15 @@
-"""Background job enqueue for document processing.
+"""Background job enqueue and body for document processing.
 
-The worker that actually parses a PDF, chunks and embeds it is a later
-ticket's scope (US-008). This module only owns the queue connection and a
-minimal, idempotent enqueue call keyed by document id, so the upload route
-never does heavy work inline (NFR-016).
+The job fetches the uploaded PDF (app.storage.load), parses and chunks it
+(app.document_processing), and classifies failure so Document.status ends up
+'failed' with a clear error_message rather than the pipeline silently
+continuing (AC-020). Embedding and DocumentChunk persistence are out of scope
+here (US-008-3): this stage never writes DocumentChunk rows.
 """
 
 from __future__ import annotations
 
+import logging
 import uuid
 
 import redis
@@ -15,6 +17,12 @@ from rq import Queue
 from rq.exceptions import DuplicateJobError
 
 from app.config import REDIS_URL
+from app.database import SessionLocal
+from app.document_processing import CorruptedPDFError, NoExtractableTextError, chunk_pdf_bytes
+from app.models import Document
+from app.storage import load
+
+logger = logging.getLogger(__name__)
 
 _redis_conn: redis.Redis | None = None
 
@@ -27,12 +35,56 @@ def _queue() -> Queue:
 
 
 def process_document(document_id: str) -> None:
-    """The job body. Intentionally a no-op placeholder here.
+    """The job body: fetch, parse and chunk a document's PDF.
 
-    PDF parsing, chunking and embedding are US-008's scope; this function
-    exists only so there is something importable for rq to run, and it must
-    stay safe to run twice once it does real work.
+    Idempotent: a document already 'ready' or 'failed' is left untouched, so
+    running this job twice (at-least-once delivery) never reprocesses or
+    duplicates work. Status stays 'processing' for the duration of parsing;
+    only a classified failure here flips it to 'failed'. Writing
+    DocumentChunk rows (with embeddings) is a later stage's job.
     """
+    db = SessionLocal()
+    try:
+        doc = db.get(Document, uuid.UUID(document_id))
+        if doc is None:
+            return
+        if doc.status in ("ready", "failed"):
+            return
+
+        try:
+            data = load(doc.s3_key)
+        except Exception as exc:  # noqa: BLE001 -- any storage failure is unrecoverable here
+            logger.exception("Failed to load document %s from storage", document_id)
+            doc.status = "failed"
+            doc.error_message = f"Could not read the uploaded file: {exc}"
+            db.commit()
+            return
+
+        try:
+            chunk_pdf_bytes(data)
+        except CorruptedPDFError as exc:
+            logger.warning("Document %s is corrupted: %s", document_id, exc)
+            doc.status = "failed"
+            doc.error_message = (
+                "This file could not be read as a PDF. It may be corrupted; "
+                "please re-export it and upload again."
+            )
+            db.commit()
+            return
+        except NoExtractableTextError as exc:
+            logger.warning("Document %s has no extractable text: %s", document_id, exc)
+            doc.status = "failed"
+            doc.error_message = (
+                "No text could be extracted from this PDF. It appears to be a scanned "
+                "or image-only document, which is not currently supported."
+            )
+            db.commit()
+            return
+
+        # Chunking succeeded; embedding + persistence is US-008-3's scope.
+        # Status intentionally stays 'processing' here.
+    finally:
+        db.close()
 
 
 def enqueue_document_processing(document_id: uuid.UUID) -> None:
