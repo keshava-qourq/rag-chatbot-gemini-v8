@@ -15,6 +15,60 @@ const { Button, Input, Label, Table, THead, TBody, TR, TH, TD, Empty } = UI;
 // Sessions.tsx right before it navigates here.
 const ACTIVE_SESSION_STORAGE_KEY = "currentSessionId";
 
+const MAX_DOCS = 5;
+const MAX_SIZE_BYTES = 20 * 1024 * 1024;
+
+const glassStyle = {
+  borderRadius: brand.radius,
+  background: "rgba(255,255,255,0.07)",
+  border: "1px solid rgba(255,255,255,0.14)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+};
+
+function formatBytes(bytes) {
+  if (bytes == null) return "—";
+  const mb = bytes / (1024 * 1024);
+  return mb >= 1 ? `${mb.toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
+function formatTime(iso) {
+  if (!iso) return "—";
+  try {
+    return new Date(iso).toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
+
+function StatusBadge({ status }) {
+  const map = {
+    ready: { label: "Ready", Icon: Icons.CheckCircle, color: "#34d399" },
+    processing: { label: "Processing", Icon: Icons.Clock, color: "#fbbf24" },
+    failed: { label: "Failed", Icon: Icons.AlertCircle, color: "#fb7185" },
+  };
+  const cfg = map[status] || map.processing;
+  const Icon = cfg.Icon;
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
+      style={{
+        color: cfg.color,
+        background: `${cfg.color}1f`,
+        border: `1px solid ${cfg.color}40`,
+      }}
+    >
+      <Icon size={13} aria-hidden="true" />
+      {cfg.label}
+    </span>
+  );
+}
+
 // Turns the flat, chronological message list the API returns into
 // question/answer pairs for rendering. The backend always writes a user
 // message immediately followed by its assistant reply (sessions.py
@@ -64,7 +118,7 @@ function extractStatus(error) {
 function readActiveSessionId() {
   try {
     return sessionStorage.getItem(ACTIVE_SESSION_STORAGE_KEY);
-  } catch (e) {
+  } catch {
     return null;
   }
 }
@@ -72,36 +126,6 @@ function readActiveSessionId() {
 export default function Screen() {
   const navigate = useNavigate();
   const [sessionId] = React.useState(readActiveSessionId);
-  const MAX_DOCS = 5;
-  const MAX_SIZE_BYTES = 20 * 1024 * 1024;
-
-  function formatBytes(bytes) {
-    if (bytes == null) return "—";
-    const mb = bytes / (1024 * 1024);
-    return mb >= 1 ? `${mb.toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
-  }
-
-  function formatTime(iso) {
-    if (!iso) return "—";
-    try {
-      return new Date(iso).toLocaleString(undefined, {
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-      });
-    } catch (e) {
-      return "";
-    }
-  }
-
-  const glassStyle = {
-    borderRadius: brand.radius,
-    background: "rgba(255,255,255,0.07)",
-    border: "1px solid rgba(255,255,255,0.14)",
-    backdropFilter: "blur(20px)",
-    WebkitBackdropFilter: "blur(20px)",
-  };
 
   // AC-012: this session's real documents, fetched once from the API when
   // the session is opened -- never a seeded/sample list, and never carried
@@ -186,7 +210,7 @@ export default function Screen() {
       // seeded/sample array, and nothing carried over from another session.
       const docs = await apiFetch(`/sessions/${sessionId}/documents`, { method: "GET" });
       setDocuments(docs ?? []);
-    } catch (err) {
+    } catch {
       setDocumentsError("Couldn't load documents. Try refreshing the page.");
     } finally {
       setDocumentsLoading(false);
@@ -207,7 +231,7 @@ export default function Screen() {
     try {
       const messages = await apiFetch(`/sessions/${sessionId}/messages`, { method: "GET" });
       setExchanges(buildExchangesFromMessages(messages ?? []));
-    } catch (err) {
+    } catch {
       setHistoryError("Couldn't load the conversation history. Try refreshing the page.");
     } finally {
       setHistoryLoading(false);
@@ -303,29 +327,6 @@ export default function Screen() {
     }
   }
 
-  function StatusBadge({ status }) {
-    const map = {
-      ready: { label: "Ready", Icon: Icons.CheckCircle, color: "#34d399" },
-      processing: { label: "Processing", Icon: Icons.Clock, color: "#fbbf24" },
-      failed: { label: "Failed", Icon: Icons.AlertCircle, color: "#fb7185" },
-    };
-    const cfg = map[status] || map.processing;
-    const Icon = cfg.Icon;
-    return (
-      <span
-        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
-        style={{
-          color: cfg.color,
-          background: `${cfg.color}1f`,
-          border: `1px solid ${cfg.color}40`,
-        }}
-      >
-        <Icon size={13} aria-hidden="true" />
-        {cfg.label}
-      </span>
-    );
-  }
-
   return (
     <div
       className="min-h-full w-full px-4 py-6 md:px-8 md:py-8"
@@ -387,10 +388,7 @@ export default function Screen() {
                 {documentsError}
               </p>
             ) : documents.length === 0 ? (
-              <Empty
-                title="No documents yet"
-                description="Upload a PDF below to get started."
-              />
+              <Empty title="No documents yet" description="Upload a PDF below to get started." />
             ) : (
               <div className="overflow-x-auto">
                 <Table>
