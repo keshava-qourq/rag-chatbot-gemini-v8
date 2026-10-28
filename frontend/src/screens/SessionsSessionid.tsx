@@ -152,11 +152,6 @@ export default function Screen() {
   const idCounter = React.useRef(0);
   const fileInputRef = React.useRef(null);
 
-  function nextId(prefix) {
-    idCounter.current += 1;
-    return `${prefix}-${idCounter.current}`;
-  }
-
   function resetFileInput() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
@@ -188,7 +183,6 @@ export default function Screen() {
         // session. Reused as-is for both the initial load and each poll.
         const docs = await apiFetch(`/sessions/${sessionId}/documents`, { method: "GET" });
         setDocuments(docs ?? []);
-        if (showLoading) setDocumentsError(null);
       } catch {
         if (showLoading) {
           setDocumentsError("Couldn't load documents. Try refreshing the page.");
@@ -298,7 +292,8 @@ export default function Screen() {
     setAskWarning(null);
     setAskError(null);
 
-    const pendingId = nextId("ex");
+    idCounter.current += 1;
+    const pendingId = `ex-${idCounter.current}`;
     setExchanges((prev) => [
       ...prev,
       {
