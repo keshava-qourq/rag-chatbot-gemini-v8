@@ -5,121 +5,95 @@
 <!-- sdlc:auto:start narrative -->
 ## Overview
 
-### ARCH-OVERVIEW · approved · source: architecture:summary
+### ARCH-001 · approved · source: architecture:summary
 
-Overall approved architecture for a RAG chatbot letting authenticated users attach PDFs to chat sessions and ask questions answered only from that session's documents.
+Architecture v1 approved: React 19 SPA + FastAPI 0.115 backend (JWT auth) + S3 (PDFs) + PostgreSQL 16/pgvector (relational data + embeddings) + Redis-queued background worker + Gemini (embeddings & chat), all on AWS.
 
-Version 1, status approved. React 19 SPA calls a FastAPI 0.115 backend that issues JWTs, stores PDFs in S3, and persists users/sessions/documents/chunks/messages in PostgreSQL 16 with pgvector. PDF parsing/chunking/embedding is offloaded to a Redis-queued background worker. Gemini gemini-embedding-001 produces embeddings and gemini-2.5-flash generates grounded answers with citations to source PDF pages. Entire stack deployed on AWS.
+Components:
+- web_app: React 19 SPA for sign-up/login, session list, PDF upload, streaming chat window, citation display.
+- api_backend: FastAPI 0.115 -- JWT issuance/validation, session/document/message CRUD, upload validation, job enqueueing, retrieval/Gemini orchestration, per-user data isolation enforcement.
+- worker: Python RQ background worker consuming Redis -- downloads PDF from S3, extracts text with page positions, chunks, calls Gemini for embeddings, writes to Postgres, marks document ready/failed.
+- postgres: PostgreSQL 16 + pgvector -- users, sessions, documents, chunk text/embeddings, messages, citations; per-session similarity search.
+- redis: Redis 7 (redis:7-alpine container) -- buffers PDF processing jobs so uploads return immediately.
+- s3: Amazon S3 -- durable original PDF storage, retrievable for re-parsing and citation display.
+- gemini: Google Gemini API (SaaS) -- gemini-embedding-001 for embeddings, gemini-2.5-flash for grounded chat answers.
 
-- ⚠ Input does not map this architecture to specific requirement IDs (US-001..US-011); traceability from requirements to architecture elements is not explicit.
+**Related:** EPIC-001, EPIC-002, EPIC-003, EPIC-004, EPIC-005
 
-### ARCH-COMPONENT-web_app · approved · source: architecture:components:web_app
+### ARCH-002 · approved · source: architecture:critical_paths
 
-React 19 single-page application providing sign-up/login, session list, PDF upload, chat window with streaming answers, and citation display.
+Critical path: User Authentication.
 
-Component: Web Application (React 19). Responsible for sign-up/login UI, session list, PDF upload flow, chat window with streaming answers, and citation display.
+Email/password sign-up and login issuing a JWT, with hashed password storage and generic failure messaging on login errors.
 
-### ARCH-COMPONENT-api_backend · approved · source: architecture:components:api_backend
+**Related:** EPIC-001, US-001, US-002, US-003, US-004
 
-FastAPI 0.115 backend handling auth, CRUD, upload validation, job enqueueing, retrieval orchestration, and Gemini calls.
+### ARCH-003 · approved · source: architecture:critical_paths
 
-Component: API Backend (FastAPI 0.115). Issues/validates JWTs, performs session/document/message CRUD, validates uploads, enqueues processing jobs, orchestrates retrieval and Gemini calls, and enforces per-user data isolation.
+Critical path: PDF Upload and Processing Pipeline.
 
-### ARCH-COMPONENT-worker · approved · source: architecture:components:worker
+Validated PDF is stored in S3, queued, then parsed, chunked, embedded via Gemini, and persisted with page-level position for later retrieval.
 
-Background worker (RQ over Redis) that performs PDF parsing, chunking, embedding, and persistence.
+**Related:** EPIC-003, US-007, US-008, US-015
 
-Component: PDF Processing Worker (Python/FastAPI ecosystem, RQ, consuming Redis). Consumes queued jobs, downloads the PDF from S3, extracts text with page positions, chunks text, calls Gemini for embeddings, writes chunks/embeddings to Postgres, and marks the document ready or failed.
+### ARCH-004 · approved · source: architecture:critical_paths
 
-### ARCH-COMPONENT-postgres · approved · source: architecture:components:postgres
+Critical path: Retrieval-Augmented Question Answering.
 
-PostgreSQL 16 with pgvector stores all relational data plus chunk embeddings and serves per-session similarity search.
+Question embedded, similarity search scoped strictly to the active session's ready documents, answer generated with citations.
 
-Component: PostgreSQL Database (PostgreSQL 16 with pgvector extension). Stores users, sessions, documents, chunk text and embeddings, messages and citations; serves per-session similarity search via pgvector.
+**Related:** EPIC-004, US-009, US-010
 
-### ARCH-COMPONENT-redis · approved · source: architecture:components:redis
+### ARCH-005 · approved · source: architecture:entities
 
-Redis 7 job queue decouples PDF upload requests from asynchronous processing.
+Data model supporting users, sessions, documents, chunk embeddings, messages, and citations.
 
-Component: Background Job Queue (Redis 7, redis:7-alpine, container). Buffers PDF processing jobs so upload requests return immediately while parsing/chunking/embedding happen asynchronously.
+- users: id, email, password_hash, created_at.
+- sessions: id, user_id, name, created_at.
+- documents: id, session_id, user_id, filename, s3_key, size_bytes, page_count, status, error_message, created_at.
+- document_chunks: id, document_id, session_id, chunk_index, page_number, content, embedding, created_at.
+- messages: id, session_id, role, content, created_at.
+- citations: id, message_id, document_id, chunk_id, page_number, snippet.
 
-### ARCH-COMPONENT-s3 · approved · source: architecture:components:s3
+**Related:** EPIC-001, EPIC-002, EPIC-003, EPIC-004, EPIC-005
 
-Amazon S3 durably stores original uploaded PDFs for re-parsing and citation source display.
+### ARCH-006 · approved · source: architecture:endpoints
 
-Component: Document Storage (Amazon S3). Durable storage of original uploaded PDFs, retrievable for re-parsing and citation source display.
+Backend API surface for auth, sessions, documents, and messages.
 
-### ARCH-COMPONENT-gemini · approved · source: architecture:components:gemini
+- POST /auth/signup -- create account (complexity + uniqueness enforced).
+- POST /auth/login -- authenticate, issue JWT.
+- POST /auth/logout -- invalidate current session/token.
+- GET /sessions -- list own chat sessions.
+- POST /sessions -- create a new empty session.
+- GET /sessions/{session_id} -- get session details, owner-scoped.
+- POST /sessions/{session_id}/documents -- upload PDF (multipart), validated, queued.
+- GET /sessions/{session_id}/documents -- list documents with processing status.
+- POST /sessions/{session_id}/messages -- ask a question scoped to session's ready documents, get answer + citations.
+- GET /sessions/{session_id}/messages -- full chronological chat history.
 
-Google Gemini API provides embeddings and grounded chat answer generation.
+**Related:** EPIC-001, EPIC-002, EPIC-003, EPIC-004, EPIC-005
 
-Component: Gemini AI Provider (Google Gemini API, SaaS). Generates chunk/query embeddings via gemini-embedding-001 and grounded chat answers via gemini-2.5-flash.
+### ARCH-007 · approved · source: architecture:deployment_nodes
 
-### ARCH-CRITICALPATH-auth · approved · source: architecture:critical_paths:User Authentication
+Deployment topology on AWS.
 
-Email/password sign-up and login flow issuing a JWT.
+- frontend: AWS S3 + CloudFront static hosting, React 19 production build.
+- api_service: AWS ECS Fargate, FastAPI 0.115 on Uvicorn.
+- worker_service: AWS ECS Fargate, RQ background worker.
+- database: AWS RDS for PostgreSQL 16 with pgvector enabled.
+- queue: ECS Fargate (self-managed container), redis:7-alpine.
+- file_storage: Amazon S3, managed object storage.
+- ai_provider: Google Gemini API (gemini-2.5-flash, gemini-embedding-001).
 
-Critical path: User Authentication. Email/password sign-up and login issuing a JWT, with hashed password storage and generic failure messaging to avoid leaking account existence.
+### ARCH-008 · approved · source: architecture:technology_decisions
 
-- ⚠ Not explicitly linked to a specific requirement ID in the input.
+Rationale for the four core technology choices, with alternatives considered.
 
-### ARCH-CRITICALPATH-upload · approved · source: architecture:critical_paths:PDF Upload and Processing Pipeline
-
-End-to-end pipeline from validated PDF upload through storage, queuing, parsing, chunking, and embedding.
-
-Critical path: PDF Upload and Processing Pipeline. A validated PDF is stored in S3, queued, then parsed, chunked, embedded via Gemini, and persisted with page-level position for later retrieval.
-
-- ⚠ Not explicitly linked to a specific requirement ID in the input.
-
-### ARCH-CRITICALPATH-rag · approved · source: architecture:critical_paths:Retrieval-Augmented Question Answering
-
-Question answering flow scoped strictly to the active session's ready documents, with citations.
-
-Critical path: Retrieval-Augmented Question Answering. The question is embedded, similarity search is scoped strictly to the active session's ready documents, and an answer is generated with citations.
-
-- ⚠ Not explicitly linked to a specific requirement ID in the input.
-
-### ARCH-DATA-MODEL · approved · source: architecture:entities
-
-Relational schema covering users, sessions, documents, chunks, messages, and citations.
-
-Entities: users(id, email, password_hash, created_at); sessions(id, user_id, name, created_at); documents(id, session_id, user_id, filename, s3_key, size_bytes, page_count, status, error_message, created_at); document_chunks(id, document_id, session_id, chunk_index, page_number, content, embedding, created_at); messages(id, session_id, role, content, created_at); citations(id, message_id, document_id, chunk_id, page_number, snippet).
-
-### ARCH-API-ENDPOINTS · approved · source: architecture:endpoints
-
-REST API surface covering auth, session, document, and message operations.
-
-Endpoints: POST /auth/signup (create account, enforcing complexity and uniqueness); POST /auth/login (authenticate, issue JWT); POST /auth/logout (invalidate token); GET /sessions (list own sessions); POST /sessions (create session); GET /sessions/{session_id} (get session, owner-scoped); POST /sessions/{session_id}/documents (upload PDF, validated for type/size/per-session cap, queued); GET /sessions/{session_id}/documents (list documents with processing status); POST /sessions/{session_id}/messages (ask question scoped to session's ready documents, get answer with citations); GET /sessions/{session_id}/messages (retrieve full chronological chat history).
-
-### ARCH-DEPLOYMENT · approved · source: architecture:deployment_nodes
-
-AWS deployment topology spanning static hosting, ECS Fargate services, RDS, and the Gemini SaaS API.
-
-Deployment nodes: frontend (AWS S3 + CloudFront, React 19 production build); api_service (AWS ECS Fargate, FastAPI 0.115 on Uvicorn); worker_service (AWS ECS Fargate, RQ background worker); database (AWS RDS for PostgreSQL 16 with pgvector enabled); queue (ECS Fargate self-managed container, redis:7-alpine); file_storage (Amazon S3, managed); ai_provider (Google Gemini API, gemini-2.5-flash, gemini-embedding-001).
-
-### ARCH-TECHDECISION-backend · approved · source: architecture:technology_decisions:Backend
-
-FastAPI 0.115 chosen over Flask/Django REST Framework for async concurrency.
-
-Decision: FastAPI 0.115 (alternatives considered: Flask, Django REST Framework). Rationale: async endpoints let one user's long-running Gemini generation call not block another user's upload request, which matters once the worker and API share the same event-loop-friendly ecosystem.
-
-### ARCH-TECHDECISION-frontend · approved · source: architecture:technology_decisions:Frontend
-
-React 19 chosen over Vue/Svelte for composable stateful UI and streaming/PDF ecosystem.
-
-Decision: React 19 (alternatives considered: Vue, Svelte). Rationale: the session sidebar, streaming chat window, and citation popovers are naturally expressed as composable, stateful components, and React's ecosystem has mature streaming-fetch and PDF-rendering libraries.
-
-### ARCH-TECHDECISION-database · approved · source: architecture:technology_decisions:Database
-
-PostgreSQL 16 with pgvector chosen over MongoDB+vector DB or MySQL to keep relational and vector data transactionally consistent.
-
-Decision: PostgreSQL 16 (alternatives considered: MongoDB + separate vector DB, MySQL). Rationale: relational tables for users/sessions/documents/messages and pgvector columns for chunk embeddings live in one transactional system, so a document's status and its embeddings are never out of sync.
-
-### ARCH-TECHDECISION-cloud · approved · source: architecture:technology_decisions:Cloud
-
-AWS chosen over GCP/Azure to consolidate storage, compute, and database under one provider.
-
-Decision: AWS (alternatives considered: GCP, Azure). Rationale: S3 holds the original PDFs, RDS runs Postgres, and ECS Fargate runs the API, worker and Redis container, giving one provider for storage, compute and database at this scale.
+- Backend: FastAPI 0.115 (alternatives: Flask, Django REST Framework) -- async endpoints let one user's long Gemini call not block another's upload.
+- Frontend: React 19 (alternatives: Vue, Svelte) -- composable stateful components fit the session sidebar, streaming chat window, citation popovers; mature streaming-fetch/PDF-rendering ecosystem.
+- Database: PostgreSQL 16 (alternatives: MongoDB + separate vector DB, MySQL) -- relational tables plus pgvector columns in one transactional system keep document status and embeddings in sync.
+- Cloud: AWS (alternatives: GCP, Azure) -- S3, RDS, and ECS Fargate for API/worker/Redis give one provider for storage, compute, and database at this scale.
 <!-- sdlc:auto:end narrative -->
 
 <!-- sdlc:auto:start building-blocks -->
