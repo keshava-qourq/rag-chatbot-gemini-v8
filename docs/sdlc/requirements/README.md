@@ -5,82 +5,68 @@
 <!-- sdlc:auto:start narrative -->
 ## Summary
 
-### REQ-STACK-001 · approved · source: requirements:tech-stack
+### REQ-STACK · approved · source: requirements:stack
 
-Product owner approved a fixed technology stack (requirements v2, lightweight delivery scope): FastAPI 0.115 backend, AWS cloud, PostgreSQL 16, React 19 frontend. No substitutions permitted.
+Product owner approved a fixed technology stack and service set for this lightweight RAG chatbot; design/build must use exactly these, no substitutions.
 
-- Backend: FastAPI 0.115 -- chosen because the product's core work (PDF parsing, chunking, Gemini calls, retrieval orchestration) fits Python's ecosystem, and async support prevents one user's Gemini call from blocking another's upload.
-- Cloud: AWS -- provides object storage, a place to run FastAPI + Postgres, and headroom for 'tens to low hundreds of users' without re-platforming.
-- Database: PostgreSQL 16 -- relational storage for users/sessions/documents/chat history plus pgvector for embeddings in one transactionally consistent system.
-- Frontend: React 19 -- fits the stateful, interactive SPA needs: chat window, document sidebar, citation popovers as reusable components.
+Stack (v2): Backend FastAPI 0.115 (async handles concurrent Gemini calls without blocking uploads); Cloud AWS (storage, compute, DB in one place, room to grow); Database PostgreSQL 16 with pgvector (relational data and embeddings transactionally consistent in one system); Frontend React 19 (stateful chat UI: sidebar, streaming window, citation popovers). Services: AI provider Google Gemini (SaaS, env GEMINI_API_KEY) for gemini-2.5-flash chat and gemini-embedding-001 embeddings; Vector store pgvector in Postgres for per-session similarity search; File storage Amazon S3 (env AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, S3_BUCKET) for original PDFs up to ~20MB; Queue Redis (container redis:7-alpine) to keep PDF processing off the upload request thread. Required API keys/env vars: AWS_ACCESS_KEY_ID, AWS_REGION, AWS_SECRET_ACCESS_KEY, GEMINI_API_KEY, REDIS_URL, S3_BUCKET.
 
-### REQ-SERVICES-001 · approved · source: requirements:runtime_needs
+### REQ-SCOPE · approved · source: requirements:scope
 
-Product owner approved exact runtime services/providers and required API keys/env vars.
+Delivery scope is lightweight (requirements v2). In-scope: individual accounts, private workspace, multi-session chat with per-session PDFs, parsing/chunking/embedding, session-scoped grounded QA with citations, persistent chat history, email/password-only auth, free usage.
 
-- AI provider: Google Gemini (SaaS, env GEMINI_API_KEY) -- covers both gemini-2.5-flash (answers) and gemini-embedding-001 (embeddings) with one key.
-- Vector store: pgvector inside PostgreSQL (known) -- keeps per-session embeddings alongside users/sessions/documents, avoiding a separate vector DB.
-- File storage: Amazon S3 (SaaS, env AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, S3_BUCKET) -- stores PDFs up to ~20MB outside Postgres, re-openable for citations/re-parsing.
-- Queue: Redis as a queue (container redis:7-alpine) -- background job queue so PDF parsing/chunking/embedding doesn't block the upload request.
-- Required API keys/env vars: AWS_ACCESS_KEY_ID, AWS_REGION, AWS_SECRET_ACCESS_KEY, GEMINI_API_KEY, REDIS_URL, S3_BUCKET.
-
-### REQ-SCOPE-001 · approved · source: requirements:scope
-
-Defines in-scope capabilities and explicit out-of-scope exclusions for this version.
-
-In scope: email/password sign-up & login (no SSO); private per-user workspace; chat session creation; PDF upload per session; PDF parsing/chunking/embedding; question answering scoped to the active session's PDFs; citations to source PDF + page/section; full per-session chat history; multiple sessions per user; gemini-2.5-flash for answers; gemini-embedding-001 for embeddings; Postgres+pgvector; ~20MB per-PDF limit with a per-session document count cap; free, no billing.
-Out of scope: non-PDF formats (Word, text, markdown, images, etc.); cross-document/cross-session querying (queries are strictly scoped to the active session's attached documents); Email/SMTP (the suggested SMTP server was removed from the stack).
+In scope: user sign-up/login (email/password, no SSO); private per-user workspace for documents/sessions/history; chat session creation; PDF upload attached to a session; PDF parsing, chunking, embedding; question answering scoped to the active session's PDFs; answers with citations to PDF+page/section; full per-session chat history; multiple sessions per user; Gemini gemini-2.5-flash for answers and gemini-embedding-001 for embeddings; Postgres+pgvector for embeddings and relational data; ~20MB per-PDF limit with a per-session document count cap; free, no billing. Out of scope: non-PDF formats (Word, text, markdown, images, etc.); cross-document/cross-session querying (queries are strictly scoped to the active session's attached documents); email/SMTP functionality (removed from stack).
 
 **Related:** EPIC-001, EPIC-002, EPIC-003, EPIC-004, EPIC-005
 
-### EPIC-001 · approved · source: requirements:EPIC-001
+### REQ-EPIC-001 · approved · source: requirements:EPIC-001
 
-User Accounts & Authentication: individual email/password accounts, no SSO, with strict per-user data isolation across sessions, documents, and chat history.
+User Accounts & Authentication: individual email/password accounts with strict per-user data isolation across sessions, documents, and chat history.
 
-- US-001 (critical) Sign up with email/password: valid unused email + complex password creates account (hashed password) and signs user in (AC-001); duplicate email rejected with clear message, no duplicate created (AC-002); weak password rejected with explanation, no account created (AC-003).
-- US-002 (critical) Log in with email/password: correct credentials authenticate and issue a session/token (AC-004); wrong credentials get a generic invalid-credentials message without confirming email existence (AC-005); expired/invalidated session forces re-login on protected access (AC-006).
-- US-003 (medium) Log out: invalidates session/token so protected requests require re-login (AC-007).
-- US-004 (critical) Private, isolated workspace: users only ever see their own sessions/documents/history via UI or API (AC-008); direct access to another user's session/document/message by ID is denied with an authorization error (AC-009).
+US-001 (critical) Sign up with email/password: valid unused email + password meeting complexity rules creates an account (password hashed) and signs the user in (AC-001); duplicate email is rejected with an 'account already exists' message, no duplicate created (AC-002); weak password is rejected with requirements explained, no account created (AC-003).
+US-002 (critical) Log in: correct credentials authenticate and issue a session/token, redirecting to workspace (AC-004); wrong password or unknown email returns a generic invalid-credentials message without confirming which was wrong (AC-005); expired/invalidated session forces redirect to login (AC-006).
+US-003 (medium) Log out: logging out invalidates the session/token; subsequent protected requests require re-login (AC-007).
+US-004 (critical) Private isolated workspace: listing sessions/documents/history via UI or API returns only the authenticated user's own records (AC-008); direct access to another user's session/document/message by ID is denied with an authorization error, not the data (AC-009).
 
 **Related:** US-001, US-002, US-003, US-004
 
-### EPIC-002 · approved · source: requirements:EPIC-002
+### REQ-EPIC-002 · approved · source: requirements:EPIC-002
 
 Chat Session Management: users can create and switch between multiple independent sessions, each with its own documents and conversation thread.
 
-- US-005 (critical) Create a new chat session: confirming creation (optional name) makes a new, empty, user-owned session with no documents/messages yet (AC-010).
-- US-006 (high) View and switch between sessions: sessions list shows only the user's own sessions by name/date (AC-011); opening a session shows only that session's documents and history, independent of others (AC-012).
+US-005 (critical) Create a new session: confirming creation (optionally naming it) creates a new, empty session owned by the user with no documents or messages yet (AC-010).
+US-006 (high) View and switch sessions: the sessions list shows only the user's own sessions by name/date, never other users' sessions (AC-011); opening a session shows only that session's documents and message history, independent of other sessions (AC-012).
 
 **Related:** US-005, US-006
 
-### EPIC-003 · approved · source: requirements:EPIC-003
+### REQ-EPIC-003 · approved · source: requirements:EPIC-003
 
-PDF Upload & Processing: PDF-only uploads per session are validated, stored, queued, and processed (parsed/chunked/embedded) into pgvector, with the frontend wired to real backend status and the worker fixed to actually run in production.
+PDF Upload & Processing: PDFs are validated, stored, queued, then parsed/chunked/embedded via gemini-embedding-001 into pgvector; this epic also covers the real-backend wiring and worker-run fixes needed to make the pipeline actually function end to end.
 
-- US-007 (critical) Upload PDF to a session: valid PDF within size limit is accepted and queued (AC-013); non-PDF rejected with a PDF-only message, nothing stored (AC-014); oversized PDF (>~20MB) rejected with size-limit message (AC-015); over per-session document cap rejected with a limit-reached message (AC-016).
-- US-008 (critical) Parse/chunk/embed: accepted PDFs are extracted, chunked with page-level position, embedded via gemini-embedding-001, and stored in pgvector linked to document/session (AC-017); 'processing' documents aren't yet usable for Q&A (AC-018); successful processing marks 'ready' with chunks available (AC-019); unparseable/scanned PDFs are marked 'failed' with an explanatory message and excluded from retrieval (AC-020); missing/invalid GEMINI_API_KEY fails gracefully with a configuration error, logged (AC-021).
-- US-012 (critical) Wire Upload PDF form to the real endpoint: form sends a real multipart POST to /sessions/{session_id}/documents with the user's token instead of simulating (AC-031); new document appears in the list with backend-sourced 'processing' status (AC-032).
-- US-013 (high) Show real backend errors for rejected uploads: exact backend rejection reason (non-PDF, oversized, over-cap) is shown and no document is added (AC-033); network/auth failures show a clear error state rather than a false success (AC-034).
-- US-014 (critical) Refresh Documents list with real status: list polls/refreshes GET /sessions/{session_id}/documents until 'ready'/'failed' (AC-035); successful completion updates to 'ready' without full reload (AC-036); failure updates to 'failed' with backend error_message (AC-037).
-- US-015 (critical) Run RQ worker alongside API in the deployed container: container entrypoint runs both uvicorn and an RQ worker for the 'documents' queue concurrently (AC-038); enqueued jobs are picked up without manual intervention (AC-039); a crash in either process is visible in logs/exit status, not silently swallowed (AC-040).
-- US-016 (high) End-to-end verification: valid PDF transitions processing->ready with chunks usable (AC-041); corrupted/scanned PDF transitions to 'failed' with an explanatory UI error (AC-042); non-PDF/oversized/over-cap uploads show the backend's exact rejection message with no document record created (AC-043).
+US-007 (critical) Upload a PDF: valid PDF within size limit is accepted, tied to the session, and queued (AC-013); non-PDF files are rejected with a PDF-only message, nothing stored (AC-014); oversized PDFs (~20MB limit) are rejected with a size-limit message, nothing stored (AC-015); exceeding the per-session document cap rejects the new upload with a limit-reached message (AC-016).
+US-008 (critical) Parse/chunk/embed: accepted PDFs are extracted, chunked with page-level position retained, embedded via gemini-embedding-001, and stored in pgvector linked to the document/session (AC-017); while processing, document shows 'processing' and is unusable for QA (AC-018); on success it is marked 'ready' with chunks available (AC-019); unparseable/scanned image-only PDFs (no OCR support) are marked 'failed' with an explanatory message and excluded from retrieval until re-uploaded (AC-020); missing/invalid GEMINI_API_KEY causes graceful failure, 'failed' status with a configuration error, and logging (AC-021).
+US-012 (critical) Wire Upload PDF form to real endpoint: apiFetch must send a multipart request with the user's token to POST /sessions/{session_id}/documents instead of simulating locally (AC-031); on acceptance, the new document must appear in the list as 'processing' sourced from the real backend response (AC-032).
+US-013 (high) Show real backend errors: rejection reasons (non-PDF, oversized, over-cap) must display the exact backend message without adding a document (AC-033); network/auth failures must show a clear error state, not a false success (AC-034).
+US-014 (critical) Refresh Documents list: the list must poll/refresh GET /sessions/{session_id}/documents until 'ready' or 'failed' (AC-035); successful completion updates to 'ready' without a full reload (AC-036); failure updates to 'failed' showing the backend's error_message (AC-037).
+US-015 (critical) Run RQ worker alongside API: container entrypoint must run both uvicorn and an RQ worker on the 'documents' queue concurrently (AC-038); enqueued jobs must be picked up and processed without manual intervention (AC-039); a crash in either process must be visible in logs/exit status, not silently swallowed (AC-040).
+US-016 (high) End-to-end verification: with the worker fix applied, a valid PDF must go 'processing' -> 'ready' with chunks usable for QA in a reasonable time (AC-041); corrupted/scanned PDFs must reach 'failed' with an explanatory UI error (AC-042); non-PDF/oversized/over-cap uploads must show the backend's exact rejection message with no document record created (AC-043).
 
 **Related:** US-007, US-008, US-012, US-013, US-014, US-015, US-016
 
-### EPIC-004 · approved · source: requirements:EPIC-004
+### REQ-EPIC-004 · approved · source: requirements:EPIC-004
 
-Retrieval-Augmented Question Answering: questions are answered using only the active session's ready PDFs via gemini-2.5-flash, with citations back to source PDF/page.
+Retrieval-Augmented Question Answering: questions are answered strictly from the active session's ready documents via similarity search and gemini-2.5-flash, with citations.
 
-- US-009 (critical): with ready documents present, question is embedded, similarity search restricted to the session's own documents, and gemini-2.5-flash generates the answer from those chunks (AC-022); no cross-session leakage, even for the same user (AC-023); no ready documents -> system says no ready documents are available instead of calling the model with empty context (AC-024); irrelevant retrieved chunks -> response states the answer could not be found rather than fabricating (AC-025); missing/invalid GEMINI_API_KEY or failed/timed-out call -> clear error, no fabricated answer recorded (AC-026).
-- US-010 (high): each answer includes a citation per source chunk identifying the PDF and, where extractable, page/section (AC-027); if page-level position wasn't preserved, citation still names the source document rather than being omitted (AC-028).
+US-009 (critical) Ask a scoped question: with ready PDFs present, the question is embedded, relevant chunks retrieved via similarity search restricted to the session's documents, and an answer generated via gemini-2.5-flash using those chunks (AC-022); chunks from other sessions, even the same user's, are never retrieved or referenced (AC-023); if no documents are attached or none are ready, the system states no ready documents are available rather than calling the model with empty context (AC-024); if retrieved chunks are irrelevant, the answer states it could not be found in the attached documents rather than fabricating one (AC-025); missing/invalid GEMINI_API_KEY or a failed/timed-out Gemini call shows a clear error and does not record a fabricated answer (AC-026).
+US-010 (high) View citations: each answer includes a citation per source chunk identifying the source PDF and, where extractable, page/section (AC-027); if page-level position wasn't preserved, the citation still names the source document rather than being omitted (AC-028).
 
 **Related:** US-009, US-010
 
-### EPIC-005 · approved · source: requirements:EPIC-005
+### REQ-EPIC-005 · approved · source: requirements:EPIC-005
 
-Chat History: full per-session conversation (questions, answers, citations) is retained and viewable chronologically on return.
+Chat History: full per-session conversation history, including citations, is retained and viewable at any time.
 
-- US-011 (high): every prior question/answer with citations displays in chronological order on reopening a session, including after logout/login (AC-029); a session's history shows only that session's own messages, never another session's (AC-030).
+US-011 (high) Retain/view full history: every prior question and its answer (with citations) is shown in chronological order on reopening a session, including after logging out and back in (AC-029); viewing one session's history never shows messages from another session (AC-030).
 
 **Related:** US-011
 <!-- sdlc:auto:end narrative -->
