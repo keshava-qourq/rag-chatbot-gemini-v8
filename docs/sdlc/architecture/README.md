@@ -5,99 +5,94 @@
 <!-- sdlc:auto:start narrative -->
 ## Overview
 
-### ARCH-OVERVIEW · approved · source: architecture:summary
+### ARCH-001 · approved · source: architecture
 
-Lightweight RAG chatbot: React SPA + FastAPI backend + Postgres/pgvector + Redis worker + S3 + Gemini, on AWS.
+Approved v1 architecture: a React 19 SPA calls a FastAPI 0.115 backend that issues JWTs, stores PDFs in S3, persists relational and vector data in PostgreSQL 16 with pgvector, and offloads PDF processing to a Redis-queued worker; Gemini supplies embeddings and chat generation; all deployed on AWS.
 
-Version 1, approved. Authenticated users create sessions, attach PDFs, and ask questions answered only from that session's documents. FastAPI issues JWTs, stores PDFs in S3, persists users/sessions/documents/chunks/messages in Postgres 16 with pgvector, offloads parsing/chunking/embedding to a Redis-queued worker. gemini-embedding-001 produces embeddings; gemini-2.5-flash generates grounded answers with citations to source PDF pages.
+- web_app (React 19): sign-up/login, session list, PDF upload, chat window with streaming answers, citation display.
+- api_backend (FastAPI 0.115): JWT issuance/validation, session/document/message CRUD, upload validation, job enqueueing, retrieval and Gemini orchestration, per-user data isolation enforcement.
+- worker (Python/RQ consuming Redis): downloads PDF from S3, extracts text with page positions, chunks text, calls Gemini for embeddings, writes chunks/embeddings to Postgres, marks document ready/failed.
+- postgres (PostgreSQL 16 + pgvector): users, sessions, documents, chunk text/embeddings, messages, citations; per-session similarity search.
+- redis (redis:7-alpine container): buffers PDF processing jobs so uploads return immediately.
+- s3 (Amazon S3): durable storage of original PDFs for re-parsing and citation display.
+- gemini (Google Gemini SaaS): gemini-embedding-001 for embeddings, gemini-2.5-flash for grounded chat answers.
 
-**Related:** EPIC-001, EPIC-002, EPIC-003, EPIC-004, EPIC-005
+**Related:** web_app, api_backend, worker, postgres, redis, s3, gemini
 
-### ARCH-WEB-APP · approved · source: architecture:web_app
+### ARCH-002 · approved · source: architecture:critical_path:User Authentication
 
-React 19 SPA for auth, session list, PDF upload, chat window, and citations.
+Authentication critical path: email/password sign-up and login issue a JWT, with hashed password storage and generic failure messaging.
 
-Component: Web Application (React 19). Provides sign-up/login, session list, PDF upload, chat window with streaming answers, and citation display. Deployed as a production build to AWS S3 + CloudFront.
+Email/password sign-up and login issuing a JWT, with hashed password storage and generic failure messaging (no indication of whether an email exists).
 
-**Related:** EPIC-001, EPIC-002, EPIC-003, EPIC-004, EPIC-005
+**Related:** EPIC-001, api_backend, postgres
 
-### ARCH-API-BACKEND · approved · source: architecture:api_backend
+### ARCH-003 · approved · source: architecture:critical_path:PDF Upload and Processing Pipeline
 
-FastAPI backend handles auth, CRUD, upload validation, job enqueue, and orchestrates retrieval/Gemini calls.
+Upload/processing critical path: a validated PDF is stored in S3, queued via Redis, then parsed, chunked, embedded via Gemini, and persisted with page-level position for later retrieval.
 
-Component: API Backend (FastAPI 0.115). Responsibilities: JWT issuance/validation, session/document/message CRUD, upload validation, enqueuing processing jobs, orchestrating retrieval and Gemini calls, enforcing per-user data isolation. Deployed on AWS ECS Fargate (Uvicorn). Endpoints: POST /auth/signup, POST /auth/login, POST /auth/logout, GET /sessions, POST /sessions, GET /sessions/{session_id}, POST /sessions/{session_id}/documents, GET /sessions/{session_id}/documents, POST /sessions/{session_id}/messages, GET /sessions/{session_id}/messages.
+Validated PDF is stored in S3, queued, then parsed, chunked, embedded via Gemini, and persisted with page-level position information in pgvector-backed Postgres for later retrieval.
 
-**Related:** EPIC-001, EPIC-002, EPIC-003, EPIC-004, EPIC-005
+**Related:** EPIC-003, s3, redis, worker, postgres, gemini
 
-### ARCH-WORKER · approved · source: architecture:worker
+### ARCH-004 · approved · source: architecture:critical_path:Retrieval-Augmented Question Answering
 
-Background RQ worker consumes Redis jobs to parse, chunk, embed, and store PDF content.
+QA critical path: question embedded, similarity search scoped strictly to the active session's ready documents, answer generated with citations.
 
-Component: PDF Processing Worker (Python/RQ, consumes Redis). Downloads PDF from S3, extracts text with page positions, chunks text, calls Gemini for embeddings, writes chunks/embeddings to Postgres, marks document ready/failed. Deployed on AWS ECS Fargate.
+A submitted question is embedded, similarity search is restricted to the active session's ready documents only, and an answer is generated with citations back to source chunks.
 
-**Related:** EPIC-003
+**Related:** EPIC-004, postgres, gemini
 
-### ARCH-POSTGRES · approved · source: architecture:postgres
+### ARCH-005 · approved · source: architecture:entities
 
-PostgreSQL 16 with pgvector stores all relational data and chunk embeddings for similarity search.
+Relational and vector schema covering users, sessions, documents, chunks (with embeddings), messages, and citations, keyed to enforce per-user and per-session scoping.
 
-Component: PostgreSQL Database (16 + pgvector). Stores users, sessions, documents, chunk text/embeddings, messages, and citations; serves per-session similarity search. Entities: users(id,email,password_hash,created_at); sessions(id,user_id,name,created_at); documents(id,session_id,user_id,filename,s3_key,size_bytes,page_count,status,error_message,created_at); document_chunks(id,document_id,session_id,chunk_index,page_number,content,embedding,created_at); messages(id,session_id,role,content,created_at); citations(id,message_id,document_id,chunk_id,page_number,snippet). Deployed on AWS RDS for PostgreSQL.
+- users: id, email, password_hash, created_at
+- sessions: id, user_id, name, created_at
+- documents: id, session_id, user_id, filename, s3_key, size_bytes, page_count, status, error_message, created_at
+- document_chunks: id, document_id, session_id, chunk_index, page_number, content, embedding, created_at
+- messages: id, session_id, role, content, created_at
+- citations: id, message_id, document_id, chunk_id, page_number, snippet
 
-**Related:** EPIC-001, EPIC-002, EPIC-003, EPIC-004, EPIC-005
+**Related:** postgres
 
-### ARCH-REDIS · approved · source: architecture:redis
+### ARCH-006 · approved · source: architecture:endpoints
 
-Redis buffers PDF processing jobs so uploads return immediately.
+REST API surface for authentication, session management, document upload/status, and chat messages.
 
-Component: Background Job Queue (Redis 7, redis:7-alpine container). Decouples upload request latency from parsing/chunking/embedding, which runs asynchronously. Deployed as a self-managed container on ECS Fargate.
+- POST /auth/signup -- create account with email/password, enforcing complexity and uniqueness.
+- POST /auth/login -- authenticate with email/password, issuing a JWT.
+- POST /auth/logout -- invalidate the current session/token.
+- GET /sessions -- list the authenticated user's own sessions.
+- POST /sessions -- create a new, empty session for the authenticated user.
+- GET /sessions/{session_id} -- get a session's details, scoped to its owner.
+- POST /sessions/{session_id}/documents -- upload a PDF (multipart), validated for type/size/per-session cap, queued for processing.
+- GET /sessions/{session_id}/documents -- list documents attached to a session with processing status.
+- POST /sessions/{session_id}/messages -- ask a question scoped to the session's ready documents, get a generated answer with citations.
+- GET /sessions/{session_id}/messages -- retrieve full chronological chat history for a session.
 
-**Related:** EPIC-003
+**Related:** api_backend
 
-### ARCH-S3 · approved · source: architecture:s3
+### ARCH-007 · approved · source: architecture:technology_decisions
 
-S3 durably stores original uploaded PDFs for re-parsing and citation display.
+Product-owner-approved technology choices, decided over named alternatives.
 
-Component: Document Storage (Amazon S3). Keeps original PDFs separate from Postgres so the database isn't carrying large binaries; files are retrievable for re-parsing and citation source display.
+- Backend: FastAPI 0.115 (vs Flask, Django REST Framework) -- async endpoints let one user's long-running Gemini generation call avoid blocking another user's upload request.
+- Frontend: React 19 (vs Vue, Svelte) -- composable, stateful components fit the session sidebar, streaming chat window, and citation popovers; mature streaming-fetch and PDF-rendering ecosystem.
+- Database: PostgreSQL 16 (vs MongoDB + separate vector DB, MySQL) -- relational tables plus pgvector columns in one transactional system keep document status and embeddings from going out of sync.
+- Cloud: AWS (vs GCP, Azure) -- S3 for original PDFs, RDS for Postgres, ECS Fargate for API, worker, and Redis container, all from one provider at this scale.
 
-**Related:** EPIC-003, EPIC-004
+### ARCH-008 · approved · source: architecture:deployment_nodes
 
-### ARCH-GEMINI · approved · source: architecture:gemini
+Seven deployment nodes on AWS realize the architecture: static frontend hosting, two Fargate services, managed Postgres, a self-managed Redis container, S3, and the external Gemini API.
 
-Google Gemini API provides embeddings and grounded chat generation.
-
-Component: Gemini AI Provider (SaaS). gemini-embedding-001 generates chunk/query embeddings; gemini-2.5-flash generates grounded chat answers. One GEMINI_API_KEY covers both calls.
-
-**Related:** EPIC-003, EPIC-004
-
-### ARCH-CP-AUTH · approved · source: architecture:critical_paths
-
-Critical path: email/password sign-up and login issuing a JWT.
-
-Hashed password storage; generic failure messaging on invalid login to avoid leaking account existence.
-
-**Related:** EPIC-001
-
-### ARCH-CP-UPLOAD · approved · source: architecture:critical_paths
-
-Critical path: validated PDF upload, storage, queuing, parsing, chunking, embedding.
-
-Validated PDF stored in S3, queued via Redis, then parsed/chunked/embedded via Gemini and persisted with page-level position for later retrieval.
-
-**Related:** EPIC-003
-
-### ARCH-CP-RAG · approved · source: architecture:critical_paths
-
-Critical path: retrieval-augmented question answering with citations.
-
-Question embedded, similarity search scoped strictly to the active session's ready documents, answer generated with citations back to source chunks.
-
-**Related:** EPIC-004
-
-### ARCH-TECH-DECISIONS · approved · source: architecture:technology_decisions
-
-Approved stack: FastAPI 0.115, React 19, PostgreSQL 16 (+pgvector), AWS.
-
-Backend FastAPI 0.115 (vs Flask, Django REST Framework): async endpoints prevent one user's Gemini call blocking another's upload. Frontend React 19 (vs Vue, Svelte): composable stateful components fit session sidebar, streaming chat, citation popovers; mature streaming-fetch/PDF-rendering ecosystem. Database PostgreSQL 16 (vs MongoDB+separate vector DB, MySQL): relational tables plus pgvector columns in one transactional system keep document status and embeddings in sync. Cloud AWS (vs GCP, Azure): S3 for PDFs, RDS for Postgres, ECS Fargate for API/worker/Redis -- one provider for storage, compute, database at this scale.
+- frontend: AWS S3 + CloudFront static hosting, React 19 production build.
+- api_service: AWS ECS Fargate, FastAPI 0.115 on Uvicorn.
+- worker_service: AWS ECS Fargate, RQ background worker (Python).
+- database: AWS RDS for PostgreSQL, PostgreSQL 16 with pgvector extension enabled.
+- queue: ECS Fargate self-managed container, redis:7-alpine.
+- file_storage: Amazon S3, managed object storage.
+- ai_provider: Google Gemini API, gemini-2.5-flash and gemini-embedding-001.
 <!-- sdlc:auto:end narrative -->
 
 <!-- sdlc:auto:start building-blocks -->

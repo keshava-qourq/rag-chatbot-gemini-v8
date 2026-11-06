@@ -23,5 +23,5 @@ _Code matches the designed API._
 <!-- sdlc:auto:end drift -->
 
 <!-- sdlc:auto:start source -->
-Generated from commit `0640981`
+Generated from commit `581f507`
 <!-- sdlc:auto:end source -->
