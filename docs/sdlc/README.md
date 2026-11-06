@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 Build a rag chatbot where user can upload there own documents and ask queries about them use gemini-2.5-flash for answers and gemini-embedding-001 for embeddings and have chat history and sessions
 
-**Documentation version:** v31
+**Documentation version:** v32
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -14,8 +14,8 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 | Document | State |
 |---|---|
 | [Requirements](requirements/README.md) | v2 approved |
-| [Architecture](architecture/README.md) | 8 entries |
-| [Development](development/README.md) | 7 entries |
+| [Architecture](architecture/README.md) | 12 entries |
+| [Development](development/README.md) | 9 entries |
 | [Testing](testing/README.md) | 1 entry |
 | [Deployment](deployment/README.md) | 1 entry |
 | [Maintenance](maintenance/README.md) | 0 entries |
@@ -31,7 +31,7 @@ Build a rag chatbot where user can upload there own documents and ask queries ab
 | [Runbook](deployment/runbook.md) | deployed |
 | [Release notes](deployment/release-notes.md) | 12 releases |
 | [Traceability matrix](traceability-matrix.md) | 16 requirements |
-| [Changelog](CHANGELOG.md) | 31 versions |
+| [Changelog](CHANGELOG.md) | 32 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps

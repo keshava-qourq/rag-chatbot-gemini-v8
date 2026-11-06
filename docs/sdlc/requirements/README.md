@@ -5,70 +5,133 @@
 <!-- sdlc:auto:start narrative -->
 ## Summary
 
-### REQ-STACK · approved · source: requirements:stack
+### REQ-US-001 · approved · source: requirements:US-001
 
-Product owner approved a fixed technology stack and service set for this lightweight RAG chatbot; design/build must use exactly these, no substitutions.
+New visitors can sign up with email and password to get a private workspace.
 
-Stack (v2): Backend FastAPI 0.115 (async handles concurrent Gemini calls without blocking uploads); Cloud AWS (storage, compute, DB in one place, room to grow); Database PostgreSQL 16 with pgvector (relational data and embeddings transactionally consistent in one system); Frontend React 19 (stateful chat UI: sidebar, streaming window, citation popovers). Services: AI provider Google Gemini (SaaS, env GEMINI_API_KEY) for gemini-2.5-flash chat and gemini-embedding-001 embeddings; Vector store pgvector in Postgres for per-session similarity search; File storage Amazon S3 (env AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, S3_BUCKET) for original PDFs up to ~20MB; Queue Redis (container redis:7-alpine) to keep PDF processing off the upload request thread. Required API keys/env vars: AWS_ACCESS_KEY_ID, AWS_REGION, AWS_SECRET_ACCESS_KEY, GEMINI_API_KEY, REDIS_URL, S3_BUCKET.
+Priority: critical. AC-001: valid unused email + complex password creates account, stores password hashed, signs user in. AC-002: duplicate email rejected with 'account already exists' message, no duplicate created. AC-003: weak password rejected with explanation of requirements, no account created.
 
-### REQ-SCOPE · approved · source: requirements:scope
+**Related:** EPIC-001, AC-001, AC-002, AC-003
 
-Delivery scope is lightweight (requirements v2). In-scope: individual accounts, private workspace, multi-session chat with per-session PDFs, parsing/chunking/embedding, session-scoped grounded QA with citations, persistent chat history, email/password-only auth, free usage.
+### REQ-US-002 · approved · source: requirements:US-002
 
-In scope: user sign-up/login (email/password, no SSO); private per-user workspace for documents/sessions/history; chat session creation; PDF upload attached to a session; PDF parsing, chunking, embedding; question answering scoped to the active session's PDFs; answers with citations to PDF+page/section; full per-session chat history; multiple sessions per user; Gemini gemini-2.5-flash for answers and gemini-embedding-001 for embeddings; Postgres+pgvector for embeddings and relational data; ~20MB per-PDF limit with a per-session document count cap; free, no billing. Out of scope: non-PDF formats (Word, text, markdown, images, etc.); cross-document/cross-session querying (queries are strictly scoped to the active session's attached documents); email/SMTP functionality (removed from stack).
+Registered users log in with email/password to access their private data.
 
-**Related:** EPIC-001, EPIC-002, EPIC-003, EPIC-004, EPIC-005
+Priority: critical. AC-004: correct credentials authenticate and issue a session/token, redirect to workspace. AC-005: incorrect password or unknown email yields a generic invalid-credentials message (no account-existence leak). AC-006: expired/invalidated session redirects to login and requires re-authentication.
 
-### REQ-EPIC-001 · approved · source: requirements:EPIC-001
+**Related:** EPIC-001, AC-004, AC-005, AC-006
 
-User Accounts & Authentication: individual email/password accounts with strict per-user data isolation across sessions, documents, and chat history.
+### REQ-US-003 · approved · source: requirements:US-003
 
-US-001 (critical) Sign up with email/password: valid unused email + password meeting complexity rules creates an account (password hashed) and signs the user in (AC-001); duplicate email is rejected with an 'account already exists' message, no duplicate created (AC-002); weak password is rejected with requirements explained, no account created (AC-003).
-US-002 (critical) Log in: correct credentials authenticate and issue a session/token, redirecting to workspace (AC-004); wrong password or unknown email returns a generic invalid-credentials message without confirming which was wrong (AC-005); expired/invalidated session forces redirect to login (AC-006).
-US-003 (medium) Log out: logging out invalidates the session/token; subsequent protected requests require re-login (AC-007).
-US-004 (critical) Private isolated workspace: listing sessions/documents/history via UI or API returns only the authenticated user's own records (AC-008); direct access to another user's session/document/message by ID is denied with an authorization error, not the data (AC-009).
+Logged-in users can log out to close their session on the device.
 
-**Related:** US-001, US-002, US-003, US-004
+Priority: medium. AC-007: logging out invalidates the session/token; subsequent requests to protected pages require login again.
 
-### REQ-EPIC-002 · approved · source: requirements:EPIC-002
+**Related:** EPIC-001, AC-007
 
-Chat Session Management: users can create and switch between multiple independent sessions, each with its own documents and conversation thread.
+### REQ-US-004 · approved · source: requirements:US-004
 
-US-005 (critical) Create a new session: confirming creation (optionally naming it) creates a new, empty session owned by the user with no documents or messages yet (AC-010).
-US-006 (high) View and switch sessions: the sessions list shows only the user's own sessions by name/date, never other users' sessions (AC-011); opening a session shows only that session's documents and message history, independent of other sessions (AC-012).
+Each user's documents, sessions, and chat history are strictly private to them.
 
-**Related:** US-005, US-006
+Priority: critical. AC-008: listing sessions/documents/history via UI or API returns only the authenticated user's own records; other users' data never included. AC-009: direct access to another user's session/document/message by ID is denied with an authorization error, not returned.
 
-### REQ-EPIC-003 · approved · source: requirements:EPIC-003
+**Related:** EPIC-001, AC-008, AC-009
 
-PDF Upload & Processing: PDFs are validated, stored, queued, then parsed/chunked/embedded via gemini-embedding-001 into pgvector; this epic also covers the real-backend wiring and worker-run fixes needed to make the pipeline actually function end to end.
+### REQ-US-005 · approved · source: requirements:US-005
 
-US-007 (critical) Upload a PDF: valid PDF within size limit is accepted, tied to the session, and queued (AC-013); non-PDF files are rejected with a PDF-only message, nothing stored (AC-014); oversized PDFs (~20MB limit) are rejected with a size-limit message, nothing stored (AC-015); exceeding the per-session document cap rejects the new upload with a limit-reached message (AC-016).
-US-008 (critical) Parse/chunk/embed: accepted PDFs are extracted, chunked with page-level position retained, embedded via gemini-embedding-001, and stored in pgvector linked to the document/session (AC-017); while processing, document shows 'processing' and is unusable for QA (AC-018); on success it is marked 'ready' with chunks available (AC-019); unparseable/scanned image-only PDFs (no OCR support) are marked 'failed' with an explanatory message and excluded from retrieval until re-uploaded (AC-020); missing/invalid GEMINI_API_KEY causes graceful failure, 'failed' status with a configuration error, and logging (AC-021).
-US-012 (critical) Wire Upload PDF form to real endpoint: apiFetch must send a multipart request with the user's token to POST /sessions/{session_id}/documents instead of simulating locally (AC-031); on acceptance, the new document must appear in the list as 'processing' sourced from the real backend response (AC-032).
-US-013 (high) Show real backend errors: rejection reasons (non-PDF, oversized, over-cap) must display the exact backend message without adding a document (AC-033); network/auth failures must show a clear error state, not a false success (AC-034).
-US-014 (critical) Refresh Documents list: the list must poll/refresh GET /sessions/{session_id}/documents until 'ready' or 'failed' (AC-035); successful completion updates to 'ready' without a full reload (AC-036); failure updates to 'failed' showing the backend's error_message (AC-037).
-US-015 (critical) Run RQ worker alongside API: container entrypoint must run both uvicorn and an RQ worker on the 'documents' queue concurrently (AC-038); enqueued jobs must be picked up and processed without manual intervention (AC-039); a crash in either process must be visible in logs/exit status, not silently swallowed (AC-040).
-US-016 (high) End-to-end verification: with the worker fix applied, a valid PDF must go 'processing' -> 'ready' with chunks usable for QA in a reasonable time (AC-041); corrupted/scanned PDFs must reach 'failed' with an explanatory UI error (AC-042); non-PDF/oversized/over-cap uploads must show the backend's exact rejection message with no document record created (AC-043).
+Users can start a new, empty chat session to begin a fresh conversation.
 
-**Related:** US-007, US-008, US-012, US-013, US-014, US-015, US-016
+Priority: critical. AC-010: confirming creation (optionally naming it) creates a new session owned by the user, with no documents and no messages yet.
 
-### REQ-EPIC-004 · approved · source: requirements:EPIC-004
+**Related:** EPIC-002, AC-010
 
-Retrieval-Augmented Question Answering: questions are answered strictly from the active session's ready documents via similarity search and gemini-2.5-flash, with citations.
+### REQ-US-006 · approved · source: requirements:US-006
 
-US-009 (critical) Ask a scoped question: with ready PDFs present, the question is embedded, relevant chunks retrieved via similarity search restricted to the session's documents, and an answer generated via gemini-2.5-flash using those chunks (AC-022); chunks from other sessions, even the same user's, are never retrieved or referenced (AC-023); if no documents are attached or none are ready, the system states no ready documents are available rather than calling the model with empty context (AC-024); if retrieved chunks are irrelevant, the answer states it could not be found in the attached documents rather than fabricating one (AC-025); missing/invalid GEMINI_API_KEY or a failed/timed-out Gemini call shows a clear error and does not record a fabricated answer (AC-026).
-US-010 (high) View citations: each answer includes a citation per source chunk identifying the source PDF and, where extractable, page/section (AC-027); if page-level position wasn't preserved, the citation still names the source document rather than being omitted (AC-028).
+Users can view all their own sessions and switch between them.
 
-**Related:** US-009, US-010
+Priority: high. AC-011: sessions list shows all of the user's sessions (name/date) and excludes other users' sessions. AC-012: opening a session shows only that session's documents and message history, independent of other sessions.
 
-### REQ-EPIC-005 · approved · source: requirements:EPIC-005
+**Related:** EPIC-002, AC-011, AC-012
 
-Chat History: full per-session conversation history, including citations, is retained and viewable at any time.
+### REQ-US-007 · approved · source: requirements:US-007
 
-US-011 (high) Retain/view full history: every prior question and its answer (with citations) is shown in chronological order on reopening a session, including after logging out and back in (AC-029); viewing one session's history never shows messages from another session (AC-030).
+Users attach one or more PDFs to a session, subject to type/size/count limits.
 
-**Related:** US-011
+Priority: critical. AC-013: valid PDF within size limit is accepted, linked to that session only, queued for processing. AC-014: non-PDF files are rejected with a PDF-only message, nothing stored. AC-015: PDFs over ~20MB are rejected with a size-limit message, nothing stored. AC-016: uploads beyond the per-session document cap are rejected with a limit-reached message.
+
+**Related:** EPIC-003, AC-013, AC-014, AC-015, AC-016
+
+### REQ-US-008 · approved · source: requirements:US-008
+
+Uploaded PDFs are parsed, chunked, and embedded so content becomes searchable.
+
+Priority: critical. AC-017: text extracted with page-level position, chunked, embedded via gemini-embedding-001, stored in pgvector linked to document/session. AC-018: document shows 'processing' status and is unusable for QA while in progress. AC-019: successful processing marks document 'ready' with chunks available. AC-020: parse failure (corrupted or scanned/image-only PDF, no OCR support) marks document 'failed' with explanatory message, excluded from retrieval. AC-021: missing/invalid GEMINI_API_KEY fails processing gracefully, marks 'failed' with config error, logs failure.
+
+**Related:** EPIC-003, AC-017, AC-018, AC-019, AC-020, AC-021
+
+### REQ-US-009 · approved · source: requirements:US-009
+
+Users ask questions answered only from the active session's ready PDFs.
+
+Priority: critical. AC-022: question embedded, similarity search restricted to session's documents, answer generated via gemini-2.5-flash using retrieved chunks. AC-023: no chunks from other sessions (even same user's) are used. AC-024: no documents attached/ready yields a 'no ready documents' response instead of calling the model with empty context. AC-025: irrelevant retrieved chunks yield an 'answer not found in documents' response rather than fabrication. AC-026: missing/invalid GEMINI_API_KEY or API failure/timeout shows a clear error, no fabricated answer recorded.
+
+**Related:** EPIC-004, AC-022, AC-023, AC-024, AC-025, AC-026
+
+### REQ-US-010 · approved · source: requirements:US-010
+
+Each answer includes citations back to the source PDF and page/section.
+
+Priority: high. AC-027: each generated answer includes a citation per source chunk, identifying the source PDF and page/section where extractable. AC-028: if page/section info isn't preserved, the citation still names the source document rather than being omitted.
+
+**Related:** EPIC-004, AC-027, AC-028
+
+### REQ-US-011 · approved · source: requirements:US-011
+
+Full question/answer history is retained and viewable per session.
+
+Priority: high. AC-029: reopening a session (including after logout/login) shows every prior question and answer with citations in chronological order. AC-030: viewing one session's history shows only that session's messages, never another session's.
+
+**Related:** EPIC-005, AC-029, AC-030
+
+### REQ-US-012 · approved · source: requirements:US-012
+
+Upload PDF form must send real multipart requests to the backend, not simulate uploads.
+
+Priority: critical. AC-031: submitting the form sends a multipart request with user's token to POST /sessions/{session_id}/documents instead of simulating locally. AC-032: on acceptance, the new document appears in the Documents list with status 'processing' sourced from the backend response, not a client-only placeholder.
+
+**Related:** EPIC-003, AC-031, AC-032
+
+### REQ-US-013 · approved · source: requirements:US-013
+
+Rejected uploads must surface the backend's real error message to the user.
+
+Priority: high. AC-033: non-PDF, oversized, or over-cap rejections display the exact backend error message and no document is added. AC-034: network/auth failures show a clear error state instead of a silent success or fake 'uploaded' state.
+
+**Related:** EPIC-003, AC-033, AC-034
+
+### REQ-US-014 · approved · source: requirements:US-014
+
+Documents list must refresh to reflect true backend processing status.
+
+Priority: critical. AC-035: list polls/refreshes GET /sessions/{session_id}/documents until status is 'ready' or 'failed'. AC-036: successful completion updates displayed status to 'ready' without full page reload. AC-037: failed processing updates status to 'failed' and shows the backend's error_message.
+
+**Related:** EPIC-003, AC-035, AC-036, AC-037
+
+### REQ-US-015 · approved · source: requirements:US-015
+
+The RQ worker for the 'documents' queue must actually run alongside the API in deployment.
+
+Priority: high. AC-038: container entrypoint runs uvicorn and an RQ worker for the 'documents' queue concurrently. AC-039: enqueued jobs are picked up and processed without manual intervention. AC-040: a crash in either the API or worker process is visible in container logs/exit status, not silently swallowed.
+
+**Related:** EPIC-003, AC-038, AC-039, AC-040
+
+### REQ-US-016 · approved · source: requirements:US-016
+
+End-to-end verification that the upload-to-ready/failed flow works against the real backend and worker.
+
+Priority: high. AC-041: with the worker fix, a valid PDF transitions 'processing' -> 'ready' in reasonable time, chunks available for QA. AC-042: a corrupted/scanned PDF transitions to 'failed' with an explanatory UI error. AC-043: non-PDF, oversized, or over-cap uploads show the backend's exact rejection message and create no document record.
+
+**Related:** EPIC-003, AC-041, AC-042, AC-043
 <!-- sdlc:auto:end narrative -->
 
 <!-- sdlc:auto:start summary -->
