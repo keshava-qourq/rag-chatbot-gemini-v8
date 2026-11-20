@@ -3,55 +3,67 @@
 > Maintained by QuorQ AI SDLC. Text between `sdlc:auto` markers is regenerated; anything outside them is yours and is kept.
 
 <!-- sdlc:auto:start narrative -->
-### DEV-SPRINT-1 · approved · source: plan:Sprint 1
+### DEV-PLAN-V2 · approved · source: plan:v2
 
-Sprint 1 goal: stand up authentication, per-user authorization, and the ability to create a chat session (capacity 20).
+Development plan version 2 was approved, organized into 4 sprints of capacity 20 each, progressing from auth/session foundation through upload, background processing, and grounded QA with history.
 
-Planned items: EPIC-001 User Accounts & Authentication (epic, unassigned); US-001 Sign up with email and password (3 pts, backend-agent); US-002 Log in with email and password (3 pts, backend-agent); US-003 Log out of the application (2 pts, backend-agent); US-004 Private, isolated workspace per user (5 pts, security-agent).
+Plan status: approved, version 2. Sprint 1 goal: stand up authentication, per-user authorization, and ability to create a chat session. Sprint 2 goal: enable browsing/switching sessions and uploading validated PDFs into a session. Sprint 3 goal: build the background pipeline that parses, chunks, and embeds uploaded PDFs into pgvector. Sprint 4 goal: deliver grounded question answering with citations and full persistent chat history. No explicit approver or approval date was provided in the input.
 
-**Related:** EPIC-001, US-001, US-002, US-003, US-004
+**Related:** US-001, US-002, US-003, US-004, US-005, US-006, US-007, US-008, US-009, US-010, US-011, US-012, US-013, US-014, US-015, US-016
 
-### DEV-SPRINT-2 · approved · source: plan:Sprint 2
+### DEV-EPIC-001 · draft · source: plan:EPIC-001
 
-Sprint 2 goal: enable browsing/switching sessions and uploading validated PDFs into a session (capacity 20).
+User Accounts & Authentication epic, planned for Sprint 1, covering signup, login, logout, and per-user workspace isolation.
 
-Planned items: EPIC-002 Chat Session Management (epic, unassigned); US-005 Create a new chat session (2 pts, backend-agent); US-006 View and switch between sessions (5 pts, frontend-agent); US-007 Upload a PDF to a chat session (8 pts, backend-agent) with tasks: US-007-T1 upload endpoint with type/size/count validation, US-007-T2 store PDFs in S3 and persist metadata, US-007-T3 enqueue processing job on Redis, US-007-T4 document list endpoint with status (all backend-agent, unestimated subtasks).
+Items: US-001 Sign up with email and password (3 pts, backend-agent); US-002 Log in with email and password (3 pts, backend-agent); US-003 Log out of the application (2 pts, backend-agent); US-004 Private, isolated workspace per user (5 pts, security-agent). Sprint 1 goal explicitly targets 'authentication, per-user authorization, and the ability to create a chat session,' which aligns with this epic plus US-005.
 
-**Related:** EPIC-002, US-005, US-006, US-007
+**Related:** US-001, US-002, US-003, US-004
 
-### DEV-SPRINT-3 · approved · source: plan:Sprint 3
+### DEV-EPIC-002 · draft · source: plan:EPIC-002
 
-Sprint 3 goal: build the background pipeline that parses, chunks, and embeds uploaded PDFs into pgvector (capacity 20).
+Chat Session Management epic, enabling users to create sessions and browse/switch between them.
 
-Planned items: US-008 Parse, chunk, and embed uploaded PDFs (13 pts, backend-agent) with tasks: US-008-T1 text extraction and page-aware chunking in worker (backend-agent), US-008-T2 integrate gemini-embedding-001 calls (integration-agent), US-008-T3 persist chunk embeddings into pgvector-backed document_chunks table (backend-agent), US-008-T4 implement status transitions and failure handling for parse/API errors (backend-agent).
+Items: US-005 Create a new chat session (2 pts, backend-agent); US-006 View and switch between my sessions (5 pts, frontend-agent). Partially aligns with Sprint 1 (session creation) and Sprint 2 (browsing/switching) goals.
 
-**Related:** EPIC-003, US-008
+**Related:** US-005, US-006
 
-### DEV-SPRINT-4 · approved · source: plan:Sprint 4
+### DEV-EPIC-003 · draft · source: plan:EPIC-003
 
-Sprint 4 goal: deliver grounded question answering with citations and full persistent chat history (capacity 20).
+PDF Upload & Processing epic covering validated upload of PDFs into a session and the background pipeline that parses, chunks, and embeds them into pgvector.
 
-Planned items: EPIC-004 Retrieval-Augmented Question Answering (epic, unassigned); US-009 Ask a question scoped to the active session's documents (8 pts, backend-agent) with tasks: US-009-T1 similarity search restricted to session's ready documents, US-009-T2 integrate gemini-2.5-flash generation (integration-agent), US-009-T3 handle no-ready-documents/no-relevant-content cases, US-009-T4 graceful error handling for Gemini failures/missing API key (backend-agent); US-010 View source citations for each answer (3 pts, frontend-agent); EPIC-005 Chat History (epic, unassigned); US-011 Retain and view full session chat history (3 pts, backend-agent).
+US-007 Upload a PDF to a chat session (8 pts, backend-agent), broken into: T1 upload endpoint with type/size/count validation; T2 store accepted PDFs in S3 and persist document metadata; T3 enqueue processing job on Redis queue after successful upload; T4 document list endpoint with per-document status. US-008 Parse, chunk, and embed uploaded PDFs (13 pts, backend-agent), broken into: T1 PDF text extraction and page-aware chunking in worker; T2 integrate gemini-embedding-001 calls to embed chunks (integration-agent); T3 persist chunk embeddings into pgvector-backed document_chunks table; T4 status transitions and failure handling for parse/API errors. Maps to Sprint 2 (upload) and Sprint 3 (pipeline) goals.
 
-**Related:** EPIC-004, EPIC-005, US-009, US-010, US-011
+**Related:** US-007, US-008
 
-### DEV-FIXES · approved · source: plan:v2 backlog
+### DEV-EPIC-004 · draft · source: plan:EPIC-004
 
-Plan v2 added five follow-up items to fix the upload-to-processing path after it was found not to work end-to-end; not mapped to a specific numbered sprint in the plan input.
+Retrieval-Augmented Question Answering epic: answering questions grounded in a session's documents, with citations.
 
-- US-012 Wire Upload PDF form to the real upload endpoint (3 pts, frontend-agent).
-- US-013 Show real backend errors for rejected uploads (2 pts, frontend-agent).
-- US-014 Refresh Documents list to reflect real processing status (3 pts, frontend-agent).
-- US-015 Run the RQ worker for the 'documents' queue alongside the API in the deployed container (3 pts, devops-agent).
-- US-016 End-to-end verification that uploaded PDFs are processed and surfaced correctly (2 pts, qa-agent).
+US-009 Ask a question scoped to the active session's documents (8 pts, backend-agent), broken into: T1 similarity search restricted to session's ready documents; T2 integrate gemini-2.5-flash generation grounded in retrieved chunks (integration-agent); T3 handle no-ready-documents and no-relevant-content cases without fabricating answers; T4 graceful error handling for Gemini failures and missing API key. US-010 View source citations for each answer (3 pts, frontend-agent). Maps to Sprint 4 goal 'grounded question answering with citations.'
 
-**Related:** EPIC-003, US-012, US-013, US-014, US-015, US-016
+**Related:** US-009, US-010
 
-### DEV-RUN-US-016 · approved · source: dev:US-016
+### DEV-EPIC-005 · draft · source: plan:EPIC-005
 
-Development run completed; the end-to-end upload verification ticket was delivered.
+Chat History epic: retaining and displaying full session chat history.
 
-Ticket US-016 (End-to-end verification that uploaded PDFs are processed and surfaced correctly) has status 'delivered', commit 3dea6f94ac2dd2ca528aaf6aa6729c6297c3a4bf. Overall development run status: completed.
+US-011 Retain and view full session chat history (3 pts, backend-agent). Maps to Sprint 4 goal 'full persistent chat history.'
 
-**Related:** US-016, EPIC-003
+**Related:** US-011
+
+### DEV-INTEGRATION-FRONTEND-DEVOPS-QA · draft · source: plan:US-012,US-013,US-014,US-015,US-016
+
+Closing-out stories wiring the frontend upload flow to real backend behavior, running the background worker in production, and end-to-end QA verification.
+
+US-012 Wire Upload PDF form to the real upload endpoint (3 pts, frontend-agent); US-013 Show real backend errors for rejected uploads (2 pts, frontend-agent); US-014 Refresh Documents list to reflect real processing status (3 pts, frontend-agent); US-015 Run the RQ worker for the 'documents' queue alongside the API in the deployed container (3 pts, devops-agent); US-016 End-to-end verification that uploaded PDFs are processed and surfaced correctly (2 pts, qa-agent) -- status=delivered, commit=3dea6f94ac2dd2ca528aaf6aa6729c6297c3a4bf.
+
+**Related:** US-012, US-013, US-014, US-015, US-016
+
+### DEV-RUN-STATUS · approved · source: dev:US-016
+
+The development run is recorded as 'completed' at the run level, but the only ticket with explicit status/commit evidence in the input is US-016.
+
+Ticket US-016 (End-to-end verification that uploaded PDFs are processed and surfaced correctly): status=delivered, commit=3dea6f94ac2dd2ca528aaf6aa6729c6297c3a4bf.
+
+**Related:** US-016
 <!-- sdlc:auto:end narrative -->

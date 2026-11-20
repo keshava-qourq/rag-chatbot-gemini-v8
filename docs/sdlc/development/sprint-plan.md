@@ -7,11 +7,11 @@
 
 Stand up authentication, per-user authorization, and the ability to create a chat session.
 
-Capacity: 20 points · Committed: 15
+Capacity: 20 points · Committed: 17
 
 | Key | Type | Title | Points | Role | Depends on |
 |---|---|---|---|---|---|
-| US-001 | Story | Sign up with email and password | 3 | backend-agent | — |
+| US-001 | Story | Sign up with email and password | 5 | backend-agent | — |
 | US-002 | Story | Log in with email and password | 3 | backend-agent | US-001 |
 | US-003 | Story | Log out of the application | 2 | backend-agent | US-002 |
 | US-004 | Story | Private, isolated workspace per user | 5 | security-agent | US-001, US-002 |
